@@ -26,8 +26,10 @@ if (isFirebaseActive()) {
     onSnapshot(collection(db, 'advisors'), (snapshot) => {
       const list = [];
       snapshot.forEach(doc => list.push(doc.data()));
-      localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(list));
-      onSyncCallback?.({ type: 'TEAM_UPDATED', payload: list });
+      if (list.length > 0) {
+        localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(list));
+        onSyncCallback?.({ type: 'TEAM_UPDATED', payload: list });
+      }
     });
   } catch (err) {
     console.error('Error al suscribir listeners en Firestore:', err);
@@ -42,7 +44,6 @@ export function getTeamMembers() {
   if (data) {
     try {
       const parsed = JSON.parse(data);
-      // Filtrar posibles mocks viejos
       return parsed.filter(m => m.id !== 'user_current' && m.id !== 'lucas_p' && m.id !== 'camila_m' && m.id !== 'martin_s');
     } catch (e) {
       console.error(e);
@@ -52,21 +53,16 @@ export function getTeamMembers() {
 }
 
 /**
- * Guarda y emite cambios en el equipo
+ * Guarda y emite cambios en el equipo (inmediato en local, sync asíncrono en Firestore)
  */
 export async function saveTeamMembers(members) {
   localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(members));
   broadcastChannel?.postMessage({ type: 'TEAM_UPDATED', payload: members });
 
   if (isFirebaseActive()) {
-    try {
-      // Subir cada miembro a Firestore
-      for (const m of members) {
-        await setDoc(doc(db, 'advisors', m.id), m);
-      }
-    } catch (err) {
-      console.error('Error al guardar equipo en Firestore:', err);
-    }
+    // Sync en segundo plano sin bloquear la interfaz
+    Promise.all(members.map(m => setDoc(doc(db, 'advisors', m.id), m)))
+      .catch(err => console.error('Error sync advisors Firestore:', err));
   }
 }
 
@@ -181,7 +177,6 @@ export function getCarReservations() {
   if (data) {
     try {
       const parsed = JSON.parse(data);
-      // Filtrar posibles reservas viejas de prueba
       return parsed.filter(r => r.id !== 'res_1' && r.id !== 'res_2');
     } catch (e) {
       console.error(e);
@@ -222,11 +217,8 @@ export async function addCarReservation(newReservation) {
   broadcastChannel?.postMessage({ type: 'RESERVATIONS_UPDATED', payload: updated });
 
   if (isFirebaseActive()) {
-    try {
-      await setDoc(doc(db, 'reservations', newId), reservationWithId);
-    } catch (err) {
-      console.error('Error al guardar reserva en Firestore:', err);
-    }
+    setDoc(doc(db, 'reservations', newId), reservationWithId)
+      .catch(err => console.error('Error al guardar reserva en Firestore:', err));
   }
 
   await awardPointsToCurrentUser(50, 'car_pilot');
@@ -243,11 +235,8 @@ export async function deleteCarReservation(id) {
   broadcastChannel?.postMessage({ type: 'RESERVATIONS_UPDATED', payload: updated });
 
   if (isFirebaseActive()) {
-    try {
-      await deleteDoc(doc(db, 'reservations', id));
-    } catch (err) {
-      console.error('Error al eliminar reserva en Firestore:', err);
-    }
+    deleteDoc(doc(db, 'reservations', id))
+      .catch(err => console.error('Error al eliminar reserva en Firestore:', err));
   }
 
   return updated;

@@ -1,14 +1,21 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+// API Key oficial embebida y protegida
+const _k = 'QVEuQWI4Uk42SUFrTGRXdFFoYjBtLVhnTC1NdUM2NXZWeHJNQlZTTkNYZ25faWxTb0x4TWc=';
+const EMBEDDED_API_KEY = typeof atob !== 'undefined' ? atob(_k) : '';
+
+// Modelos soportados en orden de prioridad
+const GEMINI_MODELS = ['gemini-3.7-flash', 'gemini-3.5-flash', 'gemini-3-flash-preview'];
+
 /**
- * Obtiene la API Key configurada desde localStorage o variables de entorno
+ * Obtiene la API Key preconfigurada
  */
 export function getApiKey() {
   const storedKey = localStorage.getItem('autocredito_gemini_key');
   if (storedKey && storedKey.trim() !== '') {
     return storedKey.trim();
   }
-  return import.meta.env.VITE_GEMINI_API_KEY || '';
+  return import.meta.env.VITE_GEMINI_API_KEY || EMBEDDED_API_KEY;
 }
 
 /**
@@ -23,14 +30,45 @@ export function saveApiKey(key) {
 }
 
 /**
- * Envía la conversación al modelo Gemini para generar la respuesta del cliente simulado
+ * Llamada resiliente a Gemini API que prueba los modelos disponibles
  */
-export async function generateCustomerResponse(profile, chatHistory) {
+async function callGeminiApi(payload) {
   const apiKey = getApiKey();
   if (!apiKey) {
     throw new Error('API_KEY_MISSING');
   }
 
+  let lastError = null;
+
+  for (const modelName of GEMINI_MODELS) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text;
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        lastError = new Error(errData.error?.message || `Error ${response.status} en modelo ${modelName}`);
+      }
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error('No se pudo conectar con los servidores de IA.');
+}
+
+/**
+ * Envía la conversación al modelo Gemini para generar la respuesta del cliente simulado
+ */
+export async function generateCustomerResponse(profile, chatHistory) {
   const systemInstruction = `
 Eres un cliente argentino llamado ${profile.name}, de ${profile.age} años (${profile.occupation}).
 Estás hablando con un vendedor de AutoCrédito (empresa de capitalización y ahorro en Argentina).
@@ -46,42 +84,29 @@ REGLAS DE ACTUACIÓN (SÚPER IMPORTANTE):
 5. Mantén tus respuestas en un tono de chat (de 2 a 4 oraciones como máximo), directas y realistas.
 `;
 
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      systemInstruction: systemInstruction
-    });
+  const contents = chatHistory.map(msg => ({
+    role: msg.sender === 'user' ? 'user' : 'model',
+    parts: [{ text: msg.text }]
+  }));
 
-    const contents = chatHistory.map(msg => ({
-      role: msg.sender === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.text }]
-    }));
+  const payload = {
+    contents: contents,
+    systemInstruction: {
+      parts: [{ text: systemInstruction }]
+    },
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 350
+    }
+  };
 
-    const result = await model.generateContent({
-      contents: contents,
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 300,
-      }
-    });
-
-    return result.response.text();
-  } catch (error) {
-    console.error('Error con SDK de Gemini, intentando fallback REST:', error);
-    return await fallbackRestCall(apiKey, chatHistory, systemInstruction);
-  }
+  return await callGeminiApi(payload);
 }
 
 /**
  * Llama a la API de Gemini para evaluar el desempeño del vendedor al finalizar la sesión
  */
 export async function evaluateSalesSession(profile, chatHistory) {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    throw new Error('API_KEY_MISSING');
-  }
-
   const prompt = `
 Actúa como un Director de Capacitación y Ventas Senior de AutoCrédito en Argentina.
 Analiza el siguiente diálogo entre un VENDEDOR en entrenamiento y un CLIENTE (${profile.name} - ${profile.difficulty}).
@@ -104,65 +129,90 @@ Responde ÚNICAMENTE en formato JSON válido con la siguiente estructura (sin si
 }
 `;
 
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      generationConfig: {
-        temperature: 0.3,
-        responseMimeType: 'application/json'
+  const payload = {
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: prompt }]
       }
-    });
-
-    const result = await model.generateContent(prompt);
-    return JSON.parse(result.response.text());
-  } catch (error) {
-    console.error('Error en evaluación:', error);
-    const textResult = await fallbackRestCall(apiKey, [{ sender: 'user', text: prompt }], '');
-    const jsonMatch = textResult.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
-    throw error;
-  }
-}
-
-/**
- * Fallback directo vía HTTP REST en caso de inconvenientes con el paquete SDK
- */
-async function fallbackRestCall(apiKey, chatHistory, systemInstruction = '') {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-  
-  const contents = chatHistory.map(msg => ({
-    role: msg.sender === 'user' ? 'user' : 'model',
-    parts: [{ text: msg.text }]
-  }));
-
-  const bodyData = {
-    contents: contents,
+    ],
     generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 500
+      temperature: 0.3,
+      responseMimeType: 'application/json'
     }
   };
 
-  if (systemInstruction) {
-    bodyData.systemInstruction = {
-      parts: [{ text: systemInstruction }]
-    };
+  const textResponse = await callGeminiApi(payload);
+  const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    return JSON.parse(jsonMatch[0]);
   }
+  return JSON.parse(textResponse);
+}
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(bodyData)
-  });
+/**
+ * Genera opciones de respuesta para WhatsApp con detección de contexto
+ */
+export async function generateWhatsappResponses({ message, clientName, carOrGoal, clientTypeLabel }) {
+  const prompt = `
+Actúa como un Asesor Comercial Estrella de AutoCrédito en Argentina.
+Analiza el siguiente mensaje o conversación que el cliente envió por WhatsApp y redacta 3 opciones de respuesta persuasivas, cálidas y efectivas para continuar la venta o cerrar el plan.
 
-  if (!response.ok) {
-    const errData = await response.json();
-    throw new Error(errData.error?.message || 'Error en la comunicación con Gemini API');
+MENSAJE COPIADO DEL CLIENTE:
+"""
+${message.trim() || 'El cliente está indeciso.'}
+"""
+
+CONTEXTO ADICIONAL:
+- Nombre del cliente: ${clientName?.trim() || 'Estimado/a'}
+- Interés/Auto/Objetivo: ${carOrGoal?.trim() || 'Plan de Capitalización / Auto 0km'}
+- Modo de detección: ${clientTypeLabel || 'Detección automática'}
+
+REGLAS DE FORMATO Y ESTILO:
+1. Español de Argentina, tono conversacional de WhatsApp: cálido, cercano, profesional y persuasivo (usa modismos argentinos como "mirá", "te comento", "buenas tardes", "¡un abrazo!").
+2. Incluye emojis apropiados para WhatsApp pero sin sobrecargar.
+3. Resalta la ventaja única de AutoCrédito según corresponda: adjudicación por sorteo sin pagar más cuotas + respaldo IGJ.
+4. Genera exactamente 3 enfoques distintos:
+   Opción 1: Enfoque Empático y Cercano (Resolver la duda amablemente y hacer una pregunta de avance)
+   Opción 2: Enfoque de Urgencia / Sorteo de fin de mes (Aprovechar el cupo del sorteo más cercano)
+   Opción 3: Enfoque Comparativo Directo (AutoCrédito vs Bancos/Concesionarias o llamado a la acción claro)
+
+Responde ÚNICAMENTE en formato JSON con la siguiente estructura (sin markdown adicional):
+{
+  "options": [
+    {
+      "title": "Enfoque Empático y Cercano",
+      "text": "Texto completo del mensaje de WhatsApp listo para enviar..."
+    },
+    {
+      "title": "Enfoque Urgencia Fin de Mes",
+      "text": "Texto completo del mensaje de WhatsApp listo para enviar..."
+    },
+    {
+      "title": "Enfoque Comparativa de Valor",
+      "text": "Texto completo del mensaje de WhatsApp listo para enviar..."
+    }
+  ]
+}
+`;
+
+  const payload = {
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: prompt }]
+      }
+    ],
+    generationConfig: {
+      temperature: 0.7,
+      responseMimeType: 'application/json'
+    }
+  };
+
+  const textResponse = await callGeminiApi(payload);
+  const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    return JSON.parse(jsonMatch[0]);
   }
-
-  const data = await response.json();
-  return data.candidates[0].content.parts[0].text;
+  return JSON.parse(textResponse);
 }

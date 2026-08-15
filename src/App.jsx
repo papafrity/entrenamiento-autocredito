@@ -7,16 +7,12 @@ import WhatsappGenerator from './components/WhatsappGenerator';
 import PlanCalculator from './components/PlanCalculator';
 import QuickObjectionsGame from './components/QuickObjectionsGame';
 import ObjectionsGuide from './components/ObjectionsGuide';
-import SettingsModal from './components/SettingsModal';
 import FeedbackModal from './components/FeedbackModal';
 import AdvisorAuthModal from './components/AdvisorAuthModal';
-import { getApiKey } from './services/geminiService';
 import { getCurrentUserProfile, awardPointsToCurrentUser, subscribeToRealtimeUpdates } from './services/storageService';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('chat');
-  const [hasApiKey, setHasApiKey] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(getCurrentUserProfile());
@@ -24,7 +20,6 @@ export default function App() {
   const [currentProfile, setCurrentProfile] = useState(null);
 
   useEffect(() => {
-    checkApiKeyStatus();
     loadCurrentUser();
 
     const unsubscribe = subscribeToRealtimeUpdates((event) => {
@@ -37,11 +32,6 @@ export default function App() {
 
   const loadCurrentUser = () => {
     setCurrentUser(getCurrentUserProfile());
-  };
-
-  const checkApiKeyStatus = () => {
-    const key = getApiKey();
-    setHasApiKey(Boolean(key && key.trim().length > 0));
   };
 
   const handleShowFeedback = (feedbackData, profileData) => {
@@ -66,9 +56,7 @@ export default function App() {
       <Header 
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        hasApiKey={hasApiKey}
         currentUser={currentUser}
-        onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
       />
 
@@ -76,8 +64,6 @@ export default function App() {
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         {activeTab === 'chat' && (
           <RoleplayChat 
-            hasApiKey={hasApiKey}
-            onOpenSettings={() => setIsSettingsOpen(true)}
             onShowFeedback={handleShowFeedback}
           />
         )}
@@ -95,10 +81,7 @@ export default function App() {
         )}
 
         {activeTab === 'whatsapp' && (
-          <WhatsappGenerator 
-            hasApiKey={hasApiKey}
-            onOpenSettings={() => setIsSettingsOpen(true)}
-          />
+          <WhatsappGenerator />
         )}
 
         {activeTab === 'calculator' && (
@@ -115,12 +98,6 @@ export default function App() {
       </main>
 
       {/* Modals */}
-      <SettingsModal 
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        onKeySaved={checkApiKeyStatus}
-      />
-
       <AdvisorAuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}

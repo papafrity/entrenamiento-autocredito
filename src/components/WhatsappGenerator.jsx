@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { getApiKey } from '../services/geminiService';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { generateWhatsappResponses } from '../services/geminiService';
 import { MessageCircle, Copy, Check, Send, Sparkles, RefreshCw, Smartphone, ShieldAlert, ChevronDown, ChevronUp, Bot } from 'lucide-react';
 
-export default function WhatsappGenerator({ hasApiKey, onOpenSettings }) {
+export default function WhatsappGenerator() {
   const [copiedMessage, setCopiedMessage] = useState('');
   const [clientName, setClientName] = useState('');
   const [carOrGoal, setCarOrGoal] = useState('');
@@ -25,11 +24,6 @@ export default function WhatsappGenerator({ hasApiKey, onOpenSettings }) {
 
   const handleGenerate = async (e) => {
     e?.preventDefault();
-    if (!hasApiKey) {
-      setErrorMsg('Debes configurar tu API Key gratuita de Gemini para usar el generador.');
-      onOpenSettings();
-      return;
-    }
 
     if (!copiedMessage.trim() && !clientName.trim()) {
       setErrorMsg('Por favor pega el mensaje de WhatsApp que te envió el cliente.');
@@ -40,67 +34,19 @@ export default function WhatsappGenerator({ hasApiKey, onOpenSettings }) {
     setErrorMsg('');
     setGeneratedOptions([]);
 
-    const apiKey = getApiKey();
     const activeScenario = scenarios.find(s => s.id === clientType)?.label;
 
-    const prompt = `
-Actúa como un Asesor Comercial Estrella de AutoCrédito en Argentina.
-Analiza el siguiente mensaje o conversación que el cliente envió por WhatsApp y redacta 3 opciones de respuesta persuasivas, cálidas y efectivas para continuar la venta o cerrar el plan.
-
-MENSAJE COPIADO DEL CLIENTE:
-"""
-${copiedMessage.trim() || 'El cliente está indeciso.'}
-"""
-
-CONTEXTO ADICIONAL:
-- Nombre del cliente: ${clientName.trim() || 'Estimado/a (adaptar si se deduce del mensaje)'}
-- Interés/Auto/Objetivo: ${carOrGoal.trim() || 'Plan de Capitalización / Auto 0km'}
-- Modo de detección: ${activeScenario}
-
-REGLAS DE FORMATO Y ESTILO:
-1. Español de Argentina, tono conversacional de WhatsApp: cálido, cercano, profesional y persuasivo (usa modismos argentinos como "mirá", "te comento", "buenas tardes", "¡un abrazo!").
-2. Incluye emojis apropiados para WhatsApp pero sin sobrecargar.
-3. Resalta la ventaja única de AutoCrédito según corresponda: adjudicación por sorteo sin pagar más cuotas + respaldo IGJ.
-4. Genera exactamente 3 enfoques distintos:
-   Opción 1: Enfoque Empático y Cercano (Resolver la duda amablemente y hacer una pregunta de avance)
-   Opción 2: Enfoque de Urgencia / Sorteo de fin de mes (Aprovechar el cupo del sorteo más cercano)
-   Opción 3: Enfoque Comparativo Directo (AutoCrédito vs Bancos/Concesionarias o llamado a la acción claro)
-
-Responde ÚNICAMENTE en formato JSON con la siguiente estructura (sin markdown adicional):
-{
-  "options": [
-    {
-      "title": "Enfoque Empático y Cercano",
-      "text": "Texto completo del mensaje de WhatsApp listo para enviar..."
-    },
-    {
-      "title": "Enfoque Urgencia Fin de Mes",
-      "text": "Texto completo del mensaje de WhatsApp listo para enviar..."
-    },
-    {
-      "title": "Enfoque Comparativa de Valor",
-      "text": "Texto completo del mensaje de WhatsApp listo para enviar..."
-    }
-  ]
-}
-`;
-
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        generationConfig: {
-          temperature: 0.7,
-          responseMimeType: 'application/json'
-        }
+      const data = await generateWhatsappResponses({
+        message: copiedMessage,
+        clientName,
+        carOrGoal,
+        clientTypeLabel: activeScenario
       });
-
-      const result = await model.generateContent(prompt);
-      const data = JSON.parse(result.response.text());
       setGeneratedOptions(data.options || []);
     } catch (err) {
       console.error(err);
-      setErrorMsg('No se pudo generar el mensaje. Revisa tu conexión o API Key.');
+      setErrorMsg('No se pudo generar el mensaje. Revisa tu conexión a internet.');
     } finally {
       setIsLoading(false);
     }

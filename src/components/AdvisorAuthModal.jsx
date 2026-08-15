@@ -15,7 +15,6 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
   const [newPhone, setNewPhone] = useState('');
   const [newAvatar, setNewAvatar] = useState('👨‍💼');
   const [errorMsg, setErrorMsg] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   const avatars = ['👨‍💼', '👩‍💼', '🧑‍💻', '👨‍🔧', '👩‍💻', '🤵', '🦸‍♂️', '🏎️'];
 
@@ -75,7 +74,6 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
       return;
     }
 
-    setIsLoading(true);
     try {
       await registerNewAdvisor({
         name: newName,
@@ -87,10 +85,8 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
       onAdvisorChanged();
       onClose();
     } catch (err) {
-      setErrorMsg('Hubo un error al registrar. Intenta de nuevo.');
       console.error(err);
-    } finally {
-      setIsLoading(false);
+      setErrorMsg('Hubo un error al registrar. Intenta de nuevo.');
     }
   };
 
@@ -363,11 +359,9 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
               <button
                 type="submit"
                 className="btn-primary"
-                disabled={isLoading}
-                style={{ padding: '12px', fontSize: '0.9rem', marginTop: '4px', opacity: isLoading ? 0.7 : 1 }}
+                style={{ padding: '12px', fontSize: '0.9rem', marginTop: '4px' }}
               >
-                <Sparkles size={16} />
-                {isLoading ? 'Creando perfil...' : 'Crear Perfil de Asesor (+100 pts de bienvenida)'}
+                <Sparkles size={16} /> Crear Perfil de Asesor (+100 pts de bienvenida)
               </button>
             </form>
           )

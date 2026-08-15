@@ -1,7 +1,7 @@
 import React from 'react';
-import { MessageSquare, Car, Trophy, MessageCircle, Calculator, Zap, BookOpen, Settings, User } from 'lucide-react';
+import { MessageSquare, Car, Trophy, MessageCircle, Calculator, Zap, BookOpen } from 'lucide-react';
 
-export default function Header({ activeTab, setActiveTab, onOpenSettings, currentUser, onOpenAuthModal }) {
+export default function Header({ activeTab, setActiveTab, currentUser, onOpenAuthModal }) {
   const tabs = [
     { id: 'chat', label: 'Chat IA', icon: MessageSquare },
     { id: 'car', label: 'Auto & Visitas', icon: Car },
@@ -41,36 +41,20 @@ export default function Header({ activeTab, setActiveTab, onOpenSettings, curren
           </div>
         </div>
 
-        {/* Right Actions: User Switcher & Settings */}
+        {/* Right Actions: User Switcher */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           
           {/* Active Advisor Profile Button */}
           <button
             onClick={onOpenAuthModal}
             className="btn-secondary"
-            style={{ fontSize: '0.78rem', padding: '6px 10px', gap: '6px' }}
+            style={{ fontSize: '0.78rem', padding: '6px 12px', gap: '6px' }}
             title="Cambiar o registrar asesor"
           >
             <span>{currentUser?.avatar || '👨‍💼'}</span>
-            <span style={{ maxWidth: '110px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {currentUser?.name || 'Registrar Asesor'}
+            <span style={{ maxWidth: '140px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 600 }}>
+              {currentUser ? `${currentUser.name} (${currentUser.branch})` : 'Registrar Asesor'}
             </span>
-          </button>
-
-          {/* Discreet Settings Button */}
-          <button 
-            onClick={onOpenSettings}
-            className="btn-secondary"
-            style={{ 
-              fontSize: '0.78rem',
-              padding: '7px 10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-            title="Configuración"
-          >
-            <Settings size={15} color="var(--text-muted)" />
           </button>
 
         </div>

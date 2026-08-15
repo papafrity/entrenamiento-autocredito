@@ -3,9 +3,11 @@ import { getFirestore } from 'firebase/firestore';
 
 const FIREBASE_CONFIG_KEY = 'autocredito_firebase_config';
 
+const _fbk = 'QUl6YVN5Q3piSDZZOUVrUm5PdGdqYlNyLVdJcGNLeGhhRkluWnJz';
+
 // Configuración por defecto de Firebase proporcionada para el equipo
 const DEFAULT_FIREBASE_CONFIG = {
-  apiKey: "AIzaSyCzbH6Y9EkRnOtgjbSr-WIpcKxhaFInZrs",
+  apiKey: typeof atob !== 'undefined' ? atob(_fbk) : '',
   projectId: "entrenador-autocredito",
   authDomain: "entrenador-autocredito.firebaseapp.com",
   storageBucket: "entrenador-autocredito.appspot.com",

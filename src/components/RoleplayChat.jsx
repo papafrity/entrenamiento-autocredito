@@ -3,7 +3,7 @@ import { CUSTOMER_PROFILES } from '../data/profiles';
 import { generateCustomerResponse, evaluateSalesSession } from '../services/geminiService';
 import { Send, Mic, MicOff, Volume2, VolumeX, Award, RotateCcw, AlertCircle, Sparkles, User, Users, ChevronDown, ChevronUp } from 'lucide-react';
 
-export default function RoleplayChat({ hasApiKey, onOpenSettings, onShowFeedback }) {
+export default function RoleplayChat({ onShowFeedback }) {
   const [selectedProfile, setSelectedProfile] = useState(CUSTOMER_PROFILES[0]);
   const [messages, setMessages] = useState([
     { id: 1, sender: 'bot', text: CUSTOMER_PROFILES[0].initialMessage, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
@@ -11,7 +11,7 @@ export default function RoleplayChat({ hasApiKey, onOpenSettings, onShowFeedback
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(true); // Default voice enabled for realistic audio experience
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const [showProfileSelector, setShowProfileSelector] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -96,7 +96,6 @@ export default function RoleplayChat({ hasApiKey, onOpenSettings, onShowFeedback
     utterance.rate = 1.05;
     utterance.pitch = 1.0;
     
-    // Buscar una voz en español si está disponible
     const voices = window.speechSynthesis.getVoices();
     const spanishVoice = voices.find(v => v.lang.startsWith('es-AR') || v.lang.startsWith('es-419') || v.lang.startsWith('es-US') || v.lang.startsWith('es-ES'));
     if (spanishVoice) {
@@ -129,12 +128,6 @@ export default function RoleplayChat({ hasApiKey, onOpenSettings, onShowFeedback
 
     if (!inputMessage.trim() || isLoading) return;
 
-    if (!hasApiKey) {
-      setErrorMsg('Debes configurar tu API Key gratuita de Gemini en el botón de arriba.');
-      onOpenSettings();
-      return;
-    }
-
     const userText = inputMessage.trim();
     const userMsg = {
       id: Date.now(),
@@ -161,12 +154,7 @@ export default function RoleplayChat({ hasApiKey, onOpenSettings, onShowFeedback
       speakText(botResponse);
     } catch (err) {
       console.error(err);
-      if (err.message === 'API_KEY_MISSING') {
-        setErrorMsg('Falta la API Key de Gemini. Por favor ingresala en Configuración.');
-        onOpenSettings();
-      } else {
-        setErrorMsg('Ocurrió un error al conectar con Gemini: ' + (err.message || 'Intenta de nuevo.'));
-      }
+      setErrorMsg('Ocurrió un error al conectar con Gemini: ' + (err.message || 'Intenta de nuevo.'));
     } finally {
       setIsLoading(false);
     }
@@ -187,11 +175,6 @@ export default function RoleplayChat({ hasApiKey, onOpenSettings, onShowFeedback
       return;
     }
 
-    if (!hasApiKey) {
-      onOpenSettings();
-      return;
-    }
-
     setIsEvaluating(true);
     setErrorMsg('');
 
@@ -200,7 +183,7 @@ export default function RoleplayChat({ hasApiKey, onOpenSettings, onShowFeedback
       onShowFeedback(evaluationResult, selectedProfile);
     } catch (err) {
       console.error(err);
-      setErrorMsg('No se pudo generar la evaluación. Revisa tu conexión o API Key.');
+      setErrorMsg('No se pudo generar la evaluación. Revisa tu conexión a internet.');
     } finally {
       setIsEvaluating(false);
     }
