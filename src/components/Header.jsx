@@ -1,7 +1,7 @@
 import React from 'react';
-import { MessageSquare, Car, Trophy, MessageCircle, Calculator, Zap, BookOpen, Key, User } from 'lucide-react';
+import { MessageSquare, Car, Trophy, MessageCircle, Calculator, Zap, BookOpen, Settings, User } from 'lucide-react';
 
-export default function Header({ activeTab, setActiveTab, hasApiKey, onOpenSettings, currentUser, onOpenAuthModal }) {
+export default function Header({ activeTab, setActiveTab, onOpenSettings, currentUser, onOpenAuthModal }) {
   const tabs = [
     { id: 'chat', label: 'Chat IA', icon: MessageSquare },
     { id: 'car', label: 'Auto & Visitas', icon: Car },
@@ -41,7 +41,7 @@ export default function Header({ activeTab, setActiveTab, hasApiKey, onOpenSetti
           </div>
         </div>
 
-        {/* Right Actions: User Switcher & API Key */}
+        {/* Right Actions: User Switcher & Settings */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           
           {/* Active Advisor Profile Button */}
@@ -52,26 +52,25 @@ export default function Header({ activeTab, setActiveTab, hasApiKey, onOpenSetti
             title="Cambiar o registrar asesor"
           >
             <span>{currentUser?.avatar || '👨‍💼'}</span>
-            <span style={{ maxWidth: '100px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {currentUser?.name || 'Mi Asesor'}
+            <span style={{ maxWidth: '110px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {currentUser?.name || 'Registrar Asesor'}
             </span>
           </button>
 
-          {/* API Key Status */}
+          {/* Discreet Settings Button */}
           <button 
             onClick={onOpenSettings}
             className="btn-secondary"
             style={{ 
               fontSize: '0.78rem',
-              padding: '6px 10px',
-              borderColor: hasApiKey ? 'rgba(46, 196, 182, 0.4)' : 'rgba(230, 57, 70, 0.5)',
-              background: hasApiKey ? 'rgba(46, 196, 182, 0.1)' : 'rgba(230, 57, 70, 0.1)'
+              padding: '7px 10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
+            title="Configuración"
           >
-            <Key size={14} color={hasApiKey ? 'var(--accent-green)' : 'var(--accent-red)'} />
-            <span style={{ color: hasApiKey ? 'var(--accent-green)' : 'var(--accent-red)', fontWeight: 600 }}>
-              {hasApiKey ? 'API OK' : 'Clave'}
-            </span>
+            <Settings size={15} color="var(--text-muted)" />
           </button>
 
         </div>

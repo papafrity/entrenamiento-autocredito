@@ -108,15 +108,16 @@ export function getCurrentUserProfile() {
 /**
  * Registra un nuevo asesor
  */
-export async function registerNewAdvisor({ name, branch, phone, avatar }) {
+export async function registerNewAdvisor({ name, provincia, branch, phone, avatar }) {
   const team = getTeamMembers();
   const newId = 'adv_' + Date.now();
   
   const newAdvisor = {
     id: newId,
     name: name.trim(),
-    branch: branch.trim() || 'Sucursal Central',
-    phone: phone.trim() || 'Sin teléfono',
+    provincia: provincia?.trim() || '',
+    branch: branch?.trim() || 'Sucursal Central',
+    phone: phone?.trim() || 'Sin teléfono',
     avatar: avatar || '👨‍💼',
     points: 100,
     simulationsCompleted: 0,
