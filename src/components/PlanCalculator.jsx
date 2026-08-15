@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { OFFICIAL_AUTOCREDITO_PLANS, OFFICIAL_PLANS_CATEGORIES } from '../data/officialPlans';
-import { Calculator, CheckCircle2, XCircle, Share2, DollarSign, Award, HelpCircle, FileText, Sparkles, Send, Download, Search } from 'lucide-react';
+import { Calculator, CheckCircle2, XCircle, Share2, DollarSign, Award, HelpCircle, FileText, Sparkles, Send, Download, Search, Filter } from 'lucide-react';
 
 export default function PlanCalculator() {
   const [activeMode, setActiveMode] = useState('official'); // 'official' o 'custom'
-  const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [selectedCategory, setSelectedCategory] = useState('Vehículos 0KM');
+  const [selectedBrand, setSelectedBrand] = useState('Todas');
   const [selectedPlanCode, setSelectedPlanCode] = useState('31607'); // Default: Fiat Cronos
   const [searchFilter, setSearchFilter] = useState('');
 
@@ -16,31 +17,41 @@ export default function PlanCalculator() {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 2 }).format(val);
   };
 
+  // Obtener lista de marcas disponibles según la categoría seleccionada
+  const availableBrands = ['Todas', ...Array.from(new Set(
+    OFFICIAL_AUTOCREDITO_PLANS
+      .filter(p => selectedCategory === 'Todos' || p.category === selectedCategory)
+      .map(p => p.brand)
+      .filter(Boolean)
+  ))].sort();
+
   const filteredPlans = OFFICIAL_AUTOCREDITO_PLANS.filter(p => {
     const matchesCat = selectedCategory === 'Todos' || p.category === selectedCategory;
+    const matchesBrand = selectedBrand === 'Todas' || p.brand === selectedBrand;
     const matchesSearch = p.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
                           p.code.toLowerCase().includes(searchFilter.toLowerCase()) ||
                           (p.brand && p.brand.toLowerCase().includes(searchFilter.toLowerCase()));
-    return matchesCat && matchesSearch;
+    return matchesCat && matchesBrand && matchesSearch;
   });
 
-  const selectedPlan = OFFICIAL_AUTOCREDITO_PLANS.find(p => p.code === selectedPlanCode) || OFFICIAL_AUTOCREDITO_PLANS[0];
+  const selectedPlan = OFFICIAL_AUTOCREDITO_PLANS.find(p => p.code === selectedPlanCode) || filteredPlans[0] || OFFICIAL_AUTOCREDITO_PLANS[0];
 
   const handleShareOfficialQuote = (plan) => {
     const text = `🚗 *COTIZACIÓN OFICIAL AUTOCRÉDITO* 🚗\n` +
                  `━━━━━━━━━━━━━━━━━━━━\n` +
-                 `📋 *Plan / Vehículo:* ${plan.name}\n` +
+                 `📋 *Plan / Modelo:* ${plan.name}\n` +
                  `🏷️ *Categoría:* ${plan.category} (${plan.brand || 'AutoCrédito'})\n` +
                  `🔖 *Código Oficial:* ${plan.code}\n` +
                  `💰 *Valor Nominal Adjudicable:* ${formatMoney(plan.nominalValue)}\n\n` +
-                 `💳 *VALORES DE CUOTAS (Plan 300):*\n` +
-                 `🔹 *Cuotas 1 a 7:* ${formatMoney(plan.quote1to7)} / mes\n` +
-                 `🔹 *Cuotas 8 en adelante:* ${formatMoney(plan.quote8onwards)} / mes\n\n` +
+                 `📝 *VALOR DE SUSCRIPCIÓN:* ${formatMoney(plan.subscription)}\n\n` +
+                 `💳 *VALORES DE CUOTAS (Plan 300 V032019):*\n` +
+                 `🔹 *Cuotas 1 a 7:* ${formatMoney(plan.quote1to7)} / mes (incluye 9.90% suscripción diluida)\n` +
+                 `🔹 *Cuotas 8 en adelante:* ${formatMoney(plan.quote8onwards)} / mes (cuota pura reducida)\n\n` +
                  `📌 *Derecho de Ingreso (DI):*\n` +
                  `• DI Total: ${formatMoney(plan.diTotal)}\n` +
                  `• DI Financiado en 2 Cuotas: ${formatMoney(plan.di2Quotes)}\n\n` +
-                 `🎁 *BENEFICIO EXCLUSIVO:*\n` +
-                 `Participás mensualmente por Lotería de la Ciudad oficial. ¡Al salir sorteado, te llevás el 0km / capital y *NO PAGÁS NUNCA MÁS NINGUNA CUOTA!* 🏆`;
+                 `🎁 *BENEFICIO EXCLUSIVO DE AUTOCRÉDITO:*\n` +
+                 `Participás todos los meses por Lotería de la Ciudad oficial. ¡Al salir sorteado, te adjudicás el 0km / capital y *NO PAGÁS NUNCA MÁS NINGUNA CUOTA!* 🏆`;
 
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
@@ -92,7 +103,7 @@ export default function PlanCalculator() {
               Cotizador y Calculadora <span style={{ color: 'var(--primary)' }}>AutoCrédito Oficial</span>
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-              Planillas arancelarias oficiales (Plan 300 V032019) con {OFFICIAL_AUTOCREDITO_PLANS.length} planes disponibles.
+              Planillas arancelarias oficiales (Plan 300 V032019) con cuotas exactas, suscripción, DI y cotización para WhatsApp.
             </p>
           </div>
         </div>
@@ -141,6 +152,7 @@ export default function PlanCalculator() {
                   key={cat}
                   onClick={() => {
                     setSelectedCategory(cat);
+                    setSelectedBrand('Todas');
                     const firstOfCat = OFFICIAL_AUTOCREDITO_PLANS.find(p => cat === 'Todos' || p.category === cat);
                     if (firstOfCat) setSelectedPlanCode(firstOfCat.code);
                   }}
@@ -175,16 +187,52 @@ export default function PlanCalculator() {
 
           </div>
 
+          {/* Sub-bar de Filtro por Marcas (cuando hay marcas disponibles) */}
+          {availableBrands.length > 2 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', padding: '6px 10px', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-sm)' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                <Filter size={12} /> Marca:
+              </span>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {availableBrands.map(brand => (
+                  <button
+                    key={brand}
+                    onClick={() => {
+                      setSelectedBrand(brand);
+                      const firstWithBrand = OFFICIAL_AUTOCREDITO_PLANS.find(p => 
+                        (selectedCategory === 'Todos' || p.category === selectedCategory) &&
+                        (brand === 'Todas' || p.brand === brand)
+                      );
+                      if (firstWithBrand) setSelectedPlanCode(firstWithBrand.code);
+                    }}
+                    style={{
+                      padding: '4px 10px',
+                      fontSize: '0.74rem',
+                      borderRadius: '12px',
+                      border: selectedBrand === brand ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.08)',
+                      background: selectedBrand === brand ? 'rgba(255, 159, 28, 0.2)' : 'transparent',
+                      color: selectedBrand === brand ? 'var(--primary)' : 'var(--text-muted)',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {brand}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
             
             {/* Left: Plan Selector List */}
-            <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '540px', overflowY: 'auto' }}>
+            <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '560px', overflowY: 'auto' }}>
               <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Seleccionar Plan ({filteredPlans.length} resultados):
+                Seleccionar Plan ({filteredPlans.length} disponibles):
               </span>
 
               {filteredPlans.map(plan => {
-                const isSelected = plan.code === selectedPlanCode;
+                const isSelected = plan.code === selectedPlan.code;
                 return (
                   <div
                     key={plan.code}
@@ -206,7 +254,7 @@ export default function PlanCalculator() {
                         {plan.name}
                       </strong>
                       <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                        Cód: <strong>{plan.code}</strong> • {plan.category}
+                        Cód: <strong>{plan.code}</strong> • {plan.brand || plan.category}
                       </p>
                     </div>
 
@@ -229,7 +277,7 @@ export default function PlanCalculator() {
               boxShadow: '0 0 25px rgba(255, 159, 28, 0.18)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '16px'
+              gap: '14px'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
@@ -257,13 +305,13 @@ export default function PlanCalculator() {
                 
                 <div style={{ background: 'rgba(0,0,0,0.3)', padding: '14px', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--primary)' }}>
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                    Cuotas 1 a 7 (con suscripción):
+                    Cuotas 1 a 7:
                   </span>
                   <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--primary)', marginTop: '2px' }}>
                     {formatMoney(selectedPlan.quote1to7)}
                   </div>
                   <p style={{ fontSize: '0.68rem', color: 'var(--text-dim)', marginTop: '2px' }}>
-                    Incluye 9.90% derecho de ingreso diluido
+                    Incluye 9.90% suscripción diluida
                   </p>
                 </div>
 
@@ -275,37 +323,49 @@ export default function PlanCalculator() {
                     {formatMoney(selectedPlan.quote8onwards)}
                   </div>
                   <p style={{ fontSize: '0.68rem', color: 'var(--text-dim)', marginTop: '2px' }}>
-                    Cuota comercial reducida hasta el final
+                    Cuota pura reducida hasta el final
                   </p>
                 </div>
 
               </div>
 
-              {/* Derecho de Ingreso Breakdown */}
-              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px 14px', borderRadius: 'var(--radius-sm)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '0.82rem' }}>
+              {/* Suscripción & Derecho de Ingreso Breakdown */}
+              <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px', borderRadius: 'var(--radius-sm)', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', fontSize: '0.8rem' }}>
                 <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Derecho de Ingreso Total:</span>
-                  <strong style={{ display: 'block', color: 'var(--text-main)', fontSize: '0.92rem' }}>
+                  <span style={{ color: 'var(--primary)', fontWeight: 700, display: 'block', fontSize: '0.72rem', textTransform: 'uppercase' }}>
+                    📝 Suscripción:
+                  </span>
+                  <strong style={{ display: 'block', color: 'var(--text-main)', fontSize: '0.92rem', marginTop: '2px' }}>
+                    {formatMoney(selectedPlan.subscription)}
+                  </strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.72rem', textTransform: 'uppercase' }}>
+                    DI Total:
+                  </span>
+                  <strong style={{ display: 'block', color: 'var(--text-main)', fontSize: '0.92rem', marginTop: '2px' }}>
                     {formatMoney(selectedPlan.diTotal)}
                   </strong>
                 </div>
                 <div>
-                  <span style={{ color: 'var(--text-muted)' }}>DI Financiado (2 cuotas):</span>
-                  <strong style={{ display: 'block', color: 'var(--text-main)', fontSize: '0.92rem' }}>
+                  <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.72rem', textTransform: 'uppercase' }}>
+                    DI Financiado (2 cuotas):
+                  </span>
+                  <strong style={{ display: 'block', color: 'var(--text-main)', fontSize: '0.92rem', marginTop: '2px' }}>
                     {formatMoney(selectedPlan.di2Quotes)}
                   </strong>
                 </div>
               </div>
 
               {/* Highlights */}
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.82rem' }}>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.8rem' }}>
                 <li style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-green)' }}>
-                  <CheckCircle2 size={16} style={{ flexShrink: 0 }} />
-                  <strong>Si sale sorteado en cualquier mes: NO PAGA MÁS CUOTAS.</strong>
+                  <CheckCircle2 size={15} style={{ flexShrink: 0 }} />
+                  <strong>Si salís adjudicado por Lotería: NO PAGÁS NINGUNA CUOTA MÁS.</strong>
                 </li>
                 <li style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
-                  <CheckCircle2 size={16} style={{ flexShrink: 0 }} />
-                  Sorteo oficial con Lotería de la Ciudad ante Escribano Público.
+                  <CheckCircle2 size={15} style={{ flexShrink: 0 }} />
+                  Sorteo oficial fiscalizado por IGJ ante Escribano Público.
                 </li>
               </ul>
 

@@ -1,7 +1,6 @@
 export const OFFICIAL_PLANS_CATEGORIES = [
   'Todos',
-  'Autos 0KM',
-  'Pickups y Utilitarios',
+  'Vehículos 0KM',
   'Dinero en Efectivo',
   'Motos 0KM',
   'Camiones',
@@ -11,11 +10,11 @@ export const OFFICIAL_PLANS_CATEGORIES = [
 
 export const OFFICIAL_AUTOCREDITO_PLANS = [
   // ==========================================
-  // --- AUTOS 0KM (CAMPAÑA 2026-08) ---
+  // --- VEHÍCULOS 0KM (AUTOS, SUVS Y PICKUPS) ---
   // ==========================================
   {
     code: '34545',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Renault',
     name: 'RENAULT Kwid Iconic Bitono 1.0L',
     nominalValue: 32900000,
@@ -28,7 +27,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '29558',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Fiat',
     name: 'FIAT Mobi Trekking 1.0L',
     nominalValue: 33900000,
@@ -41,7 +40,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '30041',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Chevrolet',
     name: 'CHEVROLET Onix Plus 1.0 LT MT',
     nominalValue: 37400000,
@@ -54,7 +53,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '30042',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Citroen',
     name: 'CITROEN C3 VTi 115 Feel Pack Aut.',
     nominalValue: 37900000,
@@ -67,7 +66,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '23642',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Coradir',
     name: 'CORADIR Tito S5 - 300 (Eléctrico)',
     nominalValue: 40900000,
@@ -80,7 +79,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '15658',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Peugeot',
     name: 'PEUGEOT 208 Allure 1.6L Nafta',
     nominalValue: 42400000,
@@ -93,7 +92,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '26484',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Nissan',
     name: 'NISSAN Versa Advance 1.6L MT Nafta',
     nominalValue: 43400000,
@@ -106,7 +105,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '19075',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Fiat',
     name: 'FIAT Pulse Drive CVT 1.3L Nafta',
     nominalValue: 43700000,
@@ -119,7 +118,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '31607',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Fiat',
     name: 'FIAT Cronos Drive 1.3L Pack Plus',
     nominalValue: 43900000,
@@ -132,7 +131,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '19068',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Volkswagen',
     name: 'VW Polo MSI 5 Ptas. 1.6L Nafta',
     nominalValue: 43900000,
@@ -144,8 +143,21 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
     term: 300
   },
   {
+    code: '30043',
+    category: 'Vehículos 0KM',
+    brand: 'Fiat',
+    name: 'FIAT Strada Freedom CD 1.4 Firefly',
+    nominalValue: 43900000,
+    subscription: 215259.44,
+    quote1to7: 214285.91,
+    quote8onwards: 144870.00,
+    diTotal: 701170.80,
+    di2Quotes: 350585.40,
+    term: 300
+  },
+  {
     code: '15646',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Fiat',
     name: 'FIAT Cronos Precision 1.3 CVT Nafta',
     nominalValue: 44900000,
@@ -158,7 +170,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '27565',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Toyota',
     name: 'TOYOTA Yaris Hatchback 1.5 XLS CVT',
     nominalValue: 44900000,
@@ -171,7 +183,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '45091',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Renault',
     name: 'RENAULT Kardian Evolution 200 EDC Aut.',
     nominalValue: 45900000,
@@ -184,7 +196,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '45101',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Chevrolet',
     name: 'CHEVROLET Spark EUV 102 CV Aut. (Eléctrico)',
     nominalValue: 46000000,
@@ -197,7 +209,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '37799',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Citroen',
     name: 'CITROEN C3 Aircross VTi Feel Pack',
     nominalValue: 46400000,
@@ -210,7 +222,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '31606',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Chevrolet',
     name: 'CHEVROLET Spin Premier 7 Pasajeros',
     nominalValue: 47900000,
@@ -222,8 +234,21 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
     term: 300
   },
   {
+    code: '15664',
+    category: 'Vehículos 0KM',
+    brand: 'Renault',
+    name: 'RENAULT Kangoo Express Furgon Confort 1.5L DCI',
+    nominalValue: 47900000,
+    subscription: 234873.05,
+    quote1to7: 233810.82,
+    quote8onwards: 158070.00,
+    diTotal: 765058.80,
+    di2Quotes: 382529.40,
+    term: 300
+  },
+  {
     code: '16461',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Chevrolet',
     name: 'CHEVROLET Tracker 1.2L Turbo LTZ Aut.',
     nominalValue: 49400000,
@@ -235,8 +260,21 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
     term: 300
   },
   {
+    code: '34544',
+    category: 'Vehículos 0KM',
+    brand: 'Chevrolet',
+    name: 'CHEVROLET Montana 1.2T LTZ AT',
+    nominalValue: 49900000,
+    subscription: 244679.86,
+    quote1to7: 243573.28,
+    quote8onwards: 164670.00,
+    diTotal: 797002.80,
+    di2Quotes: 398501.40,
+    term: 300
+  },
+  {
     code: '15666',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Toyota',
     name: 'TOYOTA Corolla XLI CVT 2.0L',
     nominalValue: 50900000,
@@ -249,7 +287,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '19073',
-    category: 'Autos 0KM',
+    category: 'Vehículos 0KM',
     brand: 'Renault',
     name: 'RENAULT Duster Iconic CVT 1.3L 4X2 Nafta',
     nominalValue: 51900000,
@@ -261,207 +299,8 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
     term: 300
   },
   {
-    code: '19066',
-    category: 'Autos 0KM',
-    brand: 'Toyota',
-    name: 'TOYOTA Corolla Cross 2.0L XLI CVT Nafta',
-    nominalValue: 57900000,
-    subscription: 283907.09,
-    quote1to7: 282623.10,
-    quote8onwards: 191070.00,
-    diTotal: 924778.80,
-    di2Quotes: 462389.40,
-    term: 300
-  },
-  {
-    code: '16465',
-    category: 'Autos 0KM',
-    brand: 'Volkswagen',
-    name: 'VW Nivus Highline 200 TSI 1.0L',
-    nominalValue: 58700000,
-    subscription: 287829.81,
-    quote1to7: 286528.08,
-    quote8onwards: 193710.00,
-    diTotal: 937556.40,
-    di2Quotes: 468778.20,
-    term: 300
-  },
-  {
-    code: '34547',
-    category: 'Autos 0KM',
-    brand: 'Volkswagen',
-    name: 'VW Virtus Highline 1.0L',
-    nominalValue: 58900000,
-    subscription: 288810.50,
-    quote1to7: 287504.33,
-    quote8onwards: 194370.00,
-    diTotal: 940750.80,
-    di2Quotes: 470375.40,
-    term: 300
-  },
-  {
-    code: '29557',
-    category: 'Autos 0KM',
-    brand: 'Peugeot',
-    name: 'PEUGEOT 2008 GT T200 Nafta',
-    nominalValue: 59900000,
-    subscription: 293713.90,
-    quote1to7: 292385.56,
-    quote8onwards: 197670.00,
-    diTotal: 956722.80,
-    di2Quotes: 478361.40,
-    term: 300
-  },
-  {
-    code: '45095',
-    category: 'Autos 0KM',
-    brand: 'Renault',
-    name: 'RENAULT Arkana E-Tech Hybrid 1.3T',
-    nominalValue: 60900000,
-    subscription: 298617.30,
-    quote1to7: 297266.79,
-    quote8onwards: 200970.00,
-    diTotal: 972694.80,
-    di2Quotes: 486347.40,
-    term: 300
-  },
-  {
-    code: '39527',
-    category: 'Autos 0KM',
-    brand: 'Ford',
-    name: 'FORD Territory Titanium',
-    nominalValue: 64700000,
-    subscription: 317250.24,
-    quote1to7: 315815.45,
-    quote8onwards: 213510.00,
-    diTotal: 1033388.40,
-    di2Quotes: 516694.20,
-    term: 300
-  },
-  {
-    code: '16462',
-    category: 'Autos 0KM',
-    brand: 'Nissan',
-    name: 'NISSAN Kicks Advance 1.6L CVT Nafta Plus',
-    nominalValue: 64900000,
-    subscription: 318230.92,
-    quote1to7: 316791.70,
-    quote8onwards: 214170.00,
-    diTotal: 1036582.80,
-    di2Quotes: 518291.40,
-    term: 300
-  },
-  {
-    code: '45093',
-    category: 'Autos 0KM',
-    brand: 'Volkswagen',
-    name: 'VW Taos 250 Highline Aut.',
-    nominalValue: 70600000,
-    subscription: 346180.32,
-    quote1to7: 344614.70,
-    quote8onwards: 232980.00,
-    diTotal: 1127623.20,
-    di2Quotes: 563811.60,
-    term: 300
-  },
-  {
-    code: '37800',
-    category: 'Autos 0KM',
-    brand: 'Jeep',
-    name: 'JEEP Compass Limited 1.3 4X2 Nafta',
-    nominalValue: 70900000,
-    subscription: 347651.34,
-    quote1to7: 346079.07,
-    quote8onwards: 233970.00,
-    diTotal: 1132414.80,
-    di2Quotes: 566207.40,
-    term: 300
-  },
-  {
-    code: '29563',
-    category: 'Autos 0KM',
-    brand: 'Ford',
-    name: 'FORD Bronco Sport Big Bend 1.5L Nafta',
-    nominalValue: 74900000,
-    subscription: 367264.96,
-    quote1to7: 365603.98,
-    quote8onwards: 247170.00,
-    diTotal: 1196302.80,
-    di2Quotes: 598151.40,
-    term: 300
-  },
-  {
-    code: '15672',
-    category: 'Autos 0KM',
-    brand: 'Volkswagen',
-    name: 'VW Vento GLI 350 TSI',
-    nominalValue: 83900000,
-    subscription: 411395.60,
-    quote1to7: 409535.03,
-    quote8onwards: 276870.00,
-    diTotal: 1340050.80,
-    di2Quotes: 670025.40,
-    term: 300
-  },
-  {
-    code: '16459',
-    category: 'Autos 0KM',
-    brand: 'Toyota',
-    name: 'TOYOTA SW4 SRX 2.8L TDI 6AT 7A',
-    nominalValue: 97900000,
-    subscription: 480043.25,
-    quote1to7: 477872.22,
-    quote8onwards: 323070.00,
-    diTotal: 1563658.80,
-    di2Quotes: 781829.40,
-    term: 300
-  },
-
-  // ==========================================
-  // --- PICKUPS Y UTILITARIOS ---
-  // ==========================================
-  {
-    code: '30043',
-    category: 'Pickups y Utilitarios',
-    brand: 'Fiat',
-    name: 'FIAT Strada Freedom CD 1.4 Firefly',
-    nominalValue: 43900000,
-    subscription: 215259.44,
-    quote1to7: 214285.91,
-    quote8onwards: 144870.00,
-    diTotal: 701170.80,
-    di2Quotes: 350585.40,
-    term: 300
-  },
-  {
-    code: '15664',
-    category: 'Pickups y Utilitarios',
-    brand: 'Renault',
-    name: 'RENAULT Kangoo Express Furgon Confort 1.5L DCI',
-    nominalValue: 47900000,
-    subscription: 234873.05,
-    quote1to7: 233810.82,
-    quote8onwards: 158070.00,
-    diTotal: 765058.80,
-    di2Quotes: 382529.40,
-    term: 300
-  },
-  {
-    code: '34544',
-    category: 'Pickups y Utilitarios',
-    brand: 'Chevrolet',
-    name: 'CHEVROLET Montana 1.2T LTZ AT',
-    nominalValue: 49900000,
-    subscription: 244679.86,
-    quote1to7: 243573.28,
-    quote8onwards: 164670.00,
-    diTotal: 797002.80,
-    di2Quotes: 398501.40,
-    term: 300
-  },
-  {
     code: '28006',
-    category: 'Pickups y Utilitarios',
+    category: 'Vehículos 0KM',
     brand: 'Volkswagen',
     name: 'VW Saveiro Confortline 1.6 MSI MT',
     nominalValue: 51900000,
@@ -474,7 +313,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '16463',
-    category: 'Pickups y Utilitarios',
+    category: 'Vehículos 0KM',
     brand: 'Nissan',
     name: 'NISSAN Frontier S 4X2 2.3L TDI Diesel',
     nominalValue: 52900000,
@@ -487,7 +326,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '31608',
-    category: 'Pickups y Utilitarios',
+    category: 'Vehículos 0KM',
     brand: 'Fiat',
     name: 'FIAT Toro Freedom CD 4X2 1.3L Nafta Aut.',
     nominalValue: 53900000,
@@ -500,7 +339,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '19074',
-    category: 'Pickups y Utilitarios',
+    category: 'Vehículos 0KM',
     brand: 'Renault',
     name: 'RENAULT Oroch Outsider 4X4 1.3L Nafta',
     nominalValue: 55900000,
@@ -513,7 +352,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '15651',
-    category: 'Pickups y Utilitarios',
+    category: 'Vehículos 0KM',
     brand: 'Ford',
     name: 'FORD Ranger CD XL 4X2 2.0L Diesel',
     nominalValue: 56900000,
@@ -526,7 +365,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '15667',
-    category: 'Pickups y Utilitarios',
+    category: 'Vehículos 0KM',
     brand: 'Toyota',
     name: 'TOYOTA Hilux 4X2 CD DX TDI 2.4L',
     nominalValue: 56900000,
@@ -538,8 +377,73 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
     term: 300
   },
   {
+    code: '19066',
+    category: 'Vehículos 0KM',
+    brand: 'Toyota',
+    name: 'TOYOTA Corolla Cross 2.0L XLI CVT Nafta',
+    nominalValue: 57900000,
+    subscription: 283907.09,
+    quote1to7: 282623.10,
+    quote8onwards: 191070.00,
+    diTotal: 924778.80,
+    di2Quotes: 462389.40,
+    term: 300
+  },
+  {
+    code: '16465',
+    category: 'Vehículos 0KM',
+    brand: 'Volkswagen',
+    name: 'VW Nivus Highline 200 TSI 1.0L',
+    nominalValue: 58700000,
+    subscription: 287829.81,
+    quote1to7: 286528.08,
+    quote8onwards: 193710.00,
+    diTotal: 937556.40,
+    di2Quotes: 468778.20,
+    term: 300
+  },
+  {
+    code: '34547',
+    category: 'Vehículos 0KM',
+    brand: 'Volkswagen',
+    name: 'VW Virtus Highline 1.0L',
+    nominalValue: 58900000,
+    subscription: 288810.50,
+    quote1to7: 287504.33,
+    quote8onwards: 194370.00,
+    diTotal: 940750.80,
+    di2Quotes: 470375.40,
+    term: 300
+  },
+  {
+    code: '29557',
+    category: 'Vehículos 0KM',
+    brand: 'Peugeot',
+    name: 'PEUGEOT 2008 GT T200 Nafta',
+    nominalValue: 59900000,
+    subscription: 293713.90,
+    quote1to7: 292385.56,
+    quote8onwards: 197670.00,
+    diTotal: 956722.80,
+    di2Quotes: 478361.40,
+    term: 300
+  },
+  {
+    code: '45095',
+    category: 'Vehículos 0KM',
+    brand: 'Renault',
+    name: 'RENAULT Arkana E-Tech Hybrid 1.3T',
+    nominalValue: 60900000,
+    subscription: 298617.30,
+    quote1to7: 297266.79,
+    quote8onwards: 200970.00,
+    diTotal: 972694.80,
+    di2Quotes: 486347.40,
+    term: 300
+  },
+  {
     code: '29564',
-    category: 'Pickups y Utilitarios',
+    category: 'Vehículos 0KM',
     brand: 'Ford',
     name: 'FORD Maverick XLT 2.0L Nafta',
     nominalValue: 61500000,
@@ -552,7 +456,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '15643',
-    category: 'Pickups y Utilitarios',
+    category: 'Vehículos 0KM',
     brand: 'Chevrolet',
     name: 'CHEVROLET S-10 CD 4X2 2.8',
     nominalValue: 63900000,
@@ -564,8 +468,60 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
     term: 300
   },
   {
+    code: '39527',
+    category: 'Vehículos 0KM',
+    brand: 'Ford',
+    name: 'FORD Territory Titanium',
+    nominalValue: 64700000,
+    subscription: 317250.24,
+    quote1to7: 315815.45,
+    quote8onwards: 213510.00,
+    diTotal: 1033388.40,
+    di2Quotes: 516694.20,
+    term: 300
+  },
+  {
+    code: '16462',
+    category: 'Vehículos 0KM',
+    brand: 'Nissan',
+    name: 'NISSAN Kicks Advance 1.6L CVT Nafta Plus',
+    nominalValue: 64900000,
+    subscription: 318230.92,
+    quote1to7: 316791.70,
+    quote8onwards: 214170.00,
+    diTotal: 1036582.80,
+    di2Quotes: 518291.40,
+    term: 300
+  },
+  {
+    code: '45093',
+    category: 'Vehículos 0KM',
+    brand: 'Volkswagen',
+    name: 'VW Taos 250 Highline Aut.',
+    nominalValue: 70600000,
+    subscription: 346180.32,
+    quote1to7: 344614.70,
+    quote8onwards: 232980.00,
+    diTotal: 1127623.20,
+    di2Quotes: 563811.60,
+    term: 300
+  },
+  {
+    code: '37800',
+    category: 'Vehículos 0KM',
+    brand: 'Jeep',
+    name: 'JEEP Compass Limited 1.3 4X2 Nafta',
+    nominalValue: 70900000,
+    subscription: 347651.34,
+    quote1to7: 346079.07,
+    quote8onwards: 233970.00,
+    diTotal: 1132414.80,
+    di2Quotes: 566207.40,
+    term: 300
+  },
+  {
     code: '16467',
-    category: 'Pickups y Utilitarios',
+    category: 'Vehículos 0KM',
     brand: 'Renault',
     name: 'RENAULT Alaskan Emotion 4X4 2.3L Diesel',
     nominalValue: 71900000,
@@ -578,7 +534,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '45103',
-    category: 'Pickups y Utilitarios',
+    category: 'Vehículos 0KM',
     brand: 'RAM',
     name: 'RAM Dakota Warlock 2.2 TD 4X4 Aut.',
     nominalValue: 74900000,
@@ -590,8 +546,21 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
     term: 300
   },
   {
+    code: '29563',
+    category: 'Vehículos 0KM',
+    brand: 'Ford',
+    name: 'FORD Bronco Sport Big Bend 1.5L Nafta',
+    nominalValue: 74900000,
+    subscription: 367264.96,
+    quote1to7: 365603.98,
+    quote8onwards: 247170.00,
+    diTotal: 1196302.80,
+    di2Quotes: 598151.40,
+    term: 300
+  },
+  {
     code: '16102',
-    category: 'Pickups y Utilitarios',
+    category: 'Vehículos 0KM',
     brand: 'Renault',
     name: 'RENAULT Master Furgon L1H1 2.3 DCI',
     nominalValue: 79900000,
@@ -604,7 +573,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '15661',
-    category: 'Pickups y Utilitarios',
+    category: 'Vehículos 0KM',
     brand: 'Peugeot',
     name: 'PEUGEOT Boxer Furgon L3H2 HDi 2.2L',
     nominalValue: 81900000,
@@ -616,8 +585,34 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
     term: 300
   },
   {
+    code: '15672',
+    category: 'Vehículos 0KM',
+    brand: 'Volkswagen',
+    name: 'VW Vento GLI 350 TSI',
+    nominalValue: 83900000,
+    subscription: 411395.60,
+    quote1to7: 409535.03,
+    quote8onwards: 276870.00,
+    diTotal: 1340050.80,
+    di2Quotes: 670025.40,
+    term: 300
+  },
+  {
+    code: '16459',
+    category: 'Vehículos 0KM',
+    brand: 'Toyota',
+    name: 'TOYOTA SW4 SRX 2.8L TDI 6AT 7A',
+    nominalValue: 97900000,
+    subscription: 480043.25,
+    quote1to7: 477872.22,
+    quote8onwards: 323070.00,
+    diTotal: 1563658.80,
+    di2Quotes: 781829.40,
+    term: 300
+  },
+  {
     code: '29560',
-    category: 'Pickups y Utilitarios',
+    category: 'Vehículos 0KM',
     brand: 'Volkswagen',
     name: 'VW Amarok Highline V6 3.0 TDI Aut.',
     nominalValue: 104900000,
@@ -630,7 +625,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '45105',
-    category: 'Pickups y Utilitarios',
+    category: 'Vehículos 0KM',
     brand: 'Mercedes Benz',
     name: 'MERCEDES BENZ Sprinter Combi 417 CDI (15+1)',
     nominalValue: 114800000,
@@ -643,7 +638,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   },
   {
     code: '45097',
-    category: 'Pickups y Utilitarios',
+    category: 'Vehículos 0KM',
     brand: 'Ford',
     name: 'FORD Ranger Raptor 3.0L 4X4 CD Aut.',
     nominalValue: 119900000,
