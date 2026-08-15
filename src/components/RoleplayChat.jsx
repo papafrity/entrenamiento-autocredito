@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { CUSTOMER_PROFILES } from '../data/profiles';
 import { generateCustomerResponse, evaluateSalesSession } from '../services/geminiService';
-import { Send, Mic, MicOff, Volume2, VolumeX, Award, RotateCcw, AlertCircle, Sparkles, User, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { Send, Mic, Volume2, VolumeX, Award, RotateCcw, AlertCircle, Users, ChevronDown, ChevronUp, Filter } from 'lucide-react';
 
 export default function RoleplayChat({ onShowFeedback }) {
   const [selectedProfile, setSelectedProfile] = useState(CUSTOMER_PROFILES[0]);
+  const [difficultyFilter, setDifficultyFilter] = useState('Todos');
   const [messages, setMessages] = useState([
     { id: 1, sender: 'bot', text: CUSTOMER_PROFILES[0].initialMessage, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
   ]);
@@ -18,6 +19,7 @@ export default function RoleplayChat({ onShowFeedback }) {
 
   const chatEndRef = useRef(null);
   const recognitionRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -47,6 +49,7 @@ export default function RoleplayChat({ onShowFeedback }) {
           transcript += event.results[i][0].transcript;
         }
         setInputMessage(transcript);
+        adjustTextareaHeight();
       };
 
       recognition.onerror = (event) => {
@@ -66,6 +69,25 @@ export default function RoleplayChat({ onShowFeedback }) {
       recognitionRef.current = recognition;
     }
   }, []);
+
+  const adjustTextareaHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 140) + 'px';
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setInputMessage(e.target.value);
+    adjustTextareaHeight();
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
 
   // Alternar grabación por voz
   const toggleRecording = () => {
@@ -139,6 +161,9 @@ export default function RoleplayChat({ onShowFeedback }) {
     const newHistory = [...messages, userMsg];
     setMessages(newHistory);
     setInputMessage('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
     setIsLoading(true);
     setErrorMsg('');
 
@@ -189,18 +214,22 @@ export default function RoleplayChat({ onShowFeedback }) {
     }
   };
 
+  const filteredProfiles = difficultyFilter === 'Todos'
+    ? CUSTOMER_PROFILES
+    : CUSTOMER_PROFILES.filter(p => p.difficulty === difficultyFilter);
+
   return (
     <div style={{ padding: '0 12px 20px 12px', maxWidth: '1280px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
       
       {/* Mobile Profile Switcher Pill / Header Card */}
-      <div className="glass-panel" style={{ padding: '10px 14px' }}>
+      <div className="glass-panel" style={{ padding: '12px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.6rem' }}>{selectedProfile.avatar}</span>
+            <span style={{ fontSize: '1.8rem' }}>{selectedProfile.avatar}</span>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <strong style={{ fontSize: '0.95rem' }}>{selectedProfile.name}</strong>
+                <strong style={{ fontSize: '0.98rem' }}>{selectedProfile.name}</strong>
                 <span className={`badge ${selectedProfile.badgeClass}`} style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
                   {selectedProfile.difficulty}
                 </span>
@@ -213,48 +242,80 @@ export default function RoleplayChat({ onShowFeedback }) {
 
           <button
             onClick={() => setShowProfileSelector(!showProfileSelector)}
-            className="btn-secondary"
-            style={{ fontSize: '0.78rem', padding: '6px 12px', gap: '6px' }}
+            className="btn-primary"
+            style={{ fontSize: '0.78rem', padding: '7px 14px', gap: '6px' }}
           >
             <Users size={14} />
-            <span>Cambiar</span>
+            <span>Elegir Cliente ({CUSTOMER_PROFILES.length})</span>
             {showProfileSelector ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
 
         </div>
 
-        {/* Expandable Profiles Grid */}
+        {/* Expandable Profiles Grid with Difficulty Tabs */}
         {showProfileSelector && (
           <div style={{
-            marginTop: '12px',
-            paddingTop: '12px',
+            marginTop: '14px',
+            paddingTop: '14px',
             borderTop: '1px solid var(--border-color)',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '8px'
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
           }}>
-            {CUSTOMER_PROFILES.map(profile => {
-              const isSelected = profile.id === selectedProfile.id;
-              return (
-                <div
-                  key={profile.id}
-                  onClick={() => handleSelectProfile(profile)}
-                  style={{
-                    padding: '10px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: isSelected ? 'rgba(255, 159, 28, 0.15)' : 'rgba(255,255,255,0.03)',
-                    border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border-color)',
-                    cursor: 'pointer'
-                  }}
+            
+            {/* Difficulty Filter Tabs */}
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {['Todos', 'Fácil', 'Medio', 'Difícil'].map(lvl => (
+                <button
+                  key={lvl}
+                  type="button"
+                  onClick={() => setDifficultyFilter(lvl)}
+                  className={difficultyFilter === lvl ? 'btn-primary' : 'btn-secondary'}
+                  style={{ fontSize: '0.72rem', padding: '4px 10px' }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                    <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{profile.avatar} {profile.name}</span>
-                    <span className={`badge ${profile.badgeClass}`} style={{ fontSize: '0.6rem', padding: '2px 5px' }}>{profile.difficulty}</span>
+                  {lvl === 'Todos' ? `Todos (${CUSTOMER_PROFILES.length})` : lvl}
+                </button>
+              ))}
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+              gap: '10px',
+              maxHeight: '340px',
+              overflowY: 'auto',
+              paddingRight: '4px'
+            }}>
+              {filteredProfiles.map(profile => {
+                const isSelected = profile.id === selectedProfile.id;
+                return (
+                  <div
+                    key={profile.id}
+                    onClick={() => handleSelectProfile(profile)}
+                    style={{
+                      padding: '12px 14px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: isSelected ? 'rgba(255, 159, 28, 0.15)' : 'rgba(255,255,255,0.03)',
+                      border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.88rem' }}>{profile.avatar} {profile.name}</span>
+                      <span className={`badge ${profile.badgeClass}`} style={{ fontSize: '0.6rem', padding: '2px 5px' }}>{profile.difficulty}</span>
+                    </div>
+                    <p style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{profile.occupation} • {profile.age} años</p>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontStyle: 'italic', lineHeight: 1.2, marginTop: '2px' }}>
+                      🎯 {profile.goal}
+                    </p>
                   </div>
-                  <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>{profile.occupation}</p>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+
           </div>
         )}
       </div>
@@ -273,7 +334,7 @@ export default function RoleplayChat({ onShowFeedback }) {
         }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--accent-green)', display: 'flex', alignItems: 'center', gap: '5px' }}>
             <span style={{ width: '6px', height: '6px', background: 'var(--accent-green)', borderRadius: '50%' }} />
-            Cliente en Vivo
+            Cliente en Vivo: <strong>{selectedProfile.name}</strong>
           </span>
 
           <div style={{ display: 'flex', gap: '6px' }}>
@@ -326,7 +387,7 @@ export default function RoleplayChat({ onShowFeedback }) {
                 }}
               >
                 <span style={{ fontSize: '0.68rem', color: 'var(--text-dim)', marginBottom: '3px' }}>
-                  {isUser ? 'Tú (Vendedor)' : selectedProfile.name} • {msg.time}
+                  {isUser ? 'Tú (Asesor)' : selectedProfile.name} • {msg.time}
                 </span>
 
                 <div style={{
@@ -337,6 +398,7 @@ export default function RoleplayChat({ onShowFeedback }) {
                   fontWeight: isUser ? 600 : 400,
                   fontSize: '0.88rem',
                   lineHeight: 1.45,
+                  whiteSpace: 'pre-wrap',
                   border: isUser ? 'none' : '1px solid var(--border-color)',
                   boxShadow: isUser ? '0 3px 10px rgba(255, 159, 28, 0.2)' : 'none'
                 }}>
@@ -367,25 +429,28 @@ export default function RoleplayChat({ onShowFeedback }) {
           </div>
         )}
 
-        {/* Bottom Input Area with Microphone and Send Button */}
-        <form onSubmit={handleSendMessage} style={{ padding: '10px 12px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Bottom Input Area with Auto-expanding Textarea, Microphone and Send Button */}
+        <form onSubmit={handleSendMessage} style={{ padding: '10px 12px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
           
           {/* Microphone Button */}
           <button
             type="button"
             onClick={toggleRecording}
             className={`btn-mic ${isRecording ? 'btn-mic-recording' : 'btn-mic-idle'}`}
+            style={{ height: '46px', width: '46px', flexShrink: 0 }}
             title={isRecording ? "Detener grabación" : "Hablar por micrófono"}
           >
             {isRecording ? <Mic size={22} /> : <Mic size={20} />}
           </button>
 
-          {/* Text Input */}
-          <input
-            type="text"
-            placeholder={isRecording ? "Escuchando tu voz... Habla ahora" : `Habla o escribe tu respuesta...`}
+          {/* Auto-expanding Text Input */}
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            placeholder={isRecording ? "Escuchando tu voz... Habla ahora" : `Escribe tu respuesta comercial... (Enter para enviar)`}
             value={inputMessage}
-            onChange={e => setInputMessage(e.target.value)}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
             disabled={isLoading}
             style={{
               flex: 1,
@@ -395,7 +460,12 @@ export default function RoleplayChat({ onShowFeedback }) {
               borderRadius: 'var(--radius-sm)',
               color: 'var(--text-main)',
               fontSize: '0.9rem',
-              outline: 'none'
+              outline: 'none',
+              resize: 'none',
+              lineHeight: '1.4',
+              maxHeight: '140px',
+              minHeight: '46px',
+              overflowY: 'auto'
             }}
           />
 
@@ -404,7 +474,7 @@ export default function RoleplayChat({ onShowFeedback }) {
             type="submit"
             disabled={isLoading || !inputMessage.trim()}
             className="btn-primary"
-            style={{ padding: '0 16px', height: '46px', borderRadius: 'var(--radius-sm)' }}
+            style={{ padding: '0 16px', height: '46px', borderRadius: 'var(--radius-sm)', flexShrink: 0 }}
           >
             <Send size={18} />
           </button>
