@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { CUSTOMER_PROFILES } from '../data/profiles';
 import { generateCustomerResponse, evaluateSalesSession } from '../services/geminiService';
-import { Send, Volume2, VolumeX, Award, RotateCcw, AlertCircle, Sparkles, User, CheckCircle } from 'lucide-react';
+import { Send, Mic, MicOff, Volume2, VolumeX, Award, RotateCcw, AlertCircle, Sparkles, User, Users, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function RoleplayChat({ hasApiKey, onOpenSettings, onShowFeedback }) {
   const [selectedProfile, setSelectedProfile] = useState(CUSTOMER_PROFILES[0]);
@@ -11,10 +11,13 @@ export default function RoleplayChat({ hasApiKey, onOpenSettings, onShowFeedback
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true); // Default voice enabled for realistic audio experience
+  const [isRecording, setIsRecording] = useState(false);
+  const [showProfileSelector, setShowProfileSelector] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const chatEndRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -24,28 +27,106 @@ export default function RoleplayChat({ hasApiKey, onOpenSettings, onShowFeedback
     scrollToBottom();
   }, [messages, isLoading]);
 
+  // Inicializar Web Speech Recognition si está soportado
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'es-AR';
+
+      recognition.onstart = () => {
+        setIsRecording(true);
+        setErrorMsg('');
+      };
+
+      recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        setInputMessage(transcript);
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsRecording(false);
+        if (event.error === 'not-allowed') {
+          setErrorMsg('Permiso de micrófono denegado. Habilitá el micrófono en tu navegador.');
+        } else if (event.error !== 'no-speech') {
+          setErrorMsg('Error de micrófono: ' + event.error);
+        }
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  // Alternar grabación por voz
+  const toggleRecording = () => {
+    if (!recognitionRef.current) {
+      setErrorMsg('El reconocimiento de voz no está soportado en este navegador. Prueba con Google Chrome.');
+      return;
+    }
+
+    if (isRecording) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+    } else {
+      setInputMessage('');
+      try {
+        recognitionRef.current.start();
+      } catch (err) {
+        console.error('Error starting recognition:', err);
+      }
+    }
+  };
+
+  // Reproducir voz del cliente simulado
+  const speakText = (text) => {
+    if (!voiceEnabled || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'es-AR';
+    utterance.rate = 1.05;
+    utterance.pitch = 1.0;
+    
+    // Buscar una voz en español si está disponible
+    const voices = window.speechSynthesis.getVoices();
+    const spanishVoice = voices.find(v => v.lang.startsWith('es-AR') || v.lang.startsWith('es-419') || v.lang.startsWith('es-US') || v.lang.startsWith('es-ES'));
+    if (spanishVoice) {
+      utterance.voice = spanishVoice;
+    }
+    
+    window.speechSynthesis.speak(utterance);
+  };
+
   // Cambiar perfil de cliente
   const handleSelectProfile = (profile) => {
     setSelectedProfile(profile);
     setMessages([
       { id: Date.now(), sender: 'bot', text: profile.initialMessage, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
     ]);
+    setShowProfileSelector(false);
     setErrorMsg('');
-  };
-
-  // Reproducir voz si está habilitada
-  const speakText = (text) => {
-    if (!voiceEnabled || !('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'es-AR';
-    utterance.rate = 1.0;
-    window.speechSynthesis.speak(utterance);
+    if (voiceEnabled) {
+      setTimeout(() => speakText(profile.initialMessage), 300);
+    }
   };
 
   // Enviar mensaje del vendedor
   const handleSendMessage = async (e) => {
     e?.preventDefault();
+    if (isRecording && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+    }
+
     if (!inputMessage.trim() || isLoading) return;
 
     if (!hasApiKey) {
@@ -126,217 +207,225 @@ export default function RoleplayChat({ hasApiKey, onOpenSettings, onShowFeedback
   };
 
   return (
-    <div style={{ padding: '0 20px 40px 20px', maxWidth: '1280px', margin: '0 auto', width: '100%' }}>
+    <div style={{ padding: '0 12px 20px 12px', maxWidth: '1280px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
       
-      {/* Grid Layout: Left Profiles Selector, Right Chat Panel */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-        
-        {/* Left Column: Customer Selector & Instructions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Mobile Profile Switcher Pill / Header Card */}
+      <div className="glass-panel" style={{ padding: '10px 14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
           
-          <div className="glass-panel" style={{ padding: '20px' }}>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <User size={18} color="var(--primary)" /> Seleccionar Perfil de Cliente
-            </h3>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
-              Elige con quién querés practicar tu argumento de venta hoy:
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {CUSTOMER_PROFILES.map(profile => {
-                const isSelected = profile.id === selectedProfile.id;
-                return (
-                  <div
-                    key={profile.id}
-                    onClick={() => handleSelectProfile(profile)}
-                    style={{
-                      padding: '14px',
-                      borderRadius: 'var(--radius-sm)',
-                      background: isSelected ? 'rgba(255, 159, 28, 0.12)' : 'rgba(255,255,255,0.03)',
-                      border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border-color)',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>{profile.avatar}</span> {profile.name}
-                      </div>
-                      <span className={`badge ${profile.badgeClass}`}>
-                        {profile.difficulty}
-                      </span>
-                    </div>
-
-                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                      {profile.occupation} ({profile.age} años)
-                    </p>
-                    <p style={{ fontSize: '0.82rem', color: 'var(--text-main)', fontStyle: 'italic' }}>
-                      "{profile.goal}"
-                    </p>
-                  </div>
-                );
-              })}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '1.6rem' }}>{selectedProfile.avatar}</span>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <strong style={{ fontSize: '0.95rem' }}>{selectedProfile.name}</strong>
+                <span className={`badge ${selectedProfile.badgeClass}`} style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
+                  {selectedProfile.difficulty}
+                </span>
+              </div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                {selectedProfile.occupation} • {selectedProfile.age} años
+              </p>
             </div>
           </div>
 
-          {/* Quick Tip Box */}
-          <div className="glass-panel" style={{ padding: '18px', background: 'rgba(0, 180, 216, 0.05)', border: '1px solid rgba(0, 180, 216, 0.2)' }}>
-            <h4 style={{ fontSize: '0.88rem', color: 'var(--secondary)', fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Sparkles size={16} /> Objetivo del Juego
-            </h4>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-              Explicale que AutoCrédito es un plan de capitalización y ahorro con adjudicación por sorteo sin pagar más cuotas. Desarma sus objeciones y al terminar haz clic en <strong>"Evaluar Venta"</strong> para ver tu puntaje de coach.
-            </p>
-          </div>
+          <button
+            onClick={() => setShowProfileSelector(!showProfileSelector)}
+            className="btn-secondary"
+            style={{ fontSize: '0.78rem', padding: '6px 12px', gap: '6px' }}
+          >
+            <Users size={14} />
+            <span>Cambiar</span>
+            {showProfileSelector ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
 
         </div>
 
-        {/* Right Column: Chat Box */}
-        <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', height: '640px', overflow: 'hidden' }}>
-          
-          {/* Chat Header */}
+        {/* Expandable Profiles Grid */}
+        {showProfileSelector && (
           <div style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid var(--border-color)',
-            background: 'rgba(0, 0, 0, 0.2)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
+            marginTop: '12px',
+            paddingTop: '12px',
+            borderTop: '1px solid var(--border-color)',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '8px'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ fontSize: '1.8rem' }}>{selectedProfile.avatar}</div>
-              <div>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, lineHeight: 1.1 }}>
-                  {selectedProfile.name}
-                </h3>
-                <span style={{ fontSize: '0.78rem', color: 'var(--accent-green)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span style={{ width: '6px', height: '6px', background: 'var(--accent-green)', borderRadius: '50%' }} />
-                  En línea (Cliente Simulado)
-                </span>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {/* Voice toggle */}
-              <button
-                onClick={() => setVoiceEnabled(!voiceEnabled)}
-                className="btn-secondary"
-                title={voiceEnabled ? "Desactivar audio" : "Activar lectura por voz"}
-                style={{ padding: '8px 12px' }}
-              >
-                {voiceEnabled ? <Volume2 size={16} color="var(--primary)" /> : <VolumeX size={16} />}
-              </button>
-
-              {/* Reset */}
-              <button
-                onClick={handleResetChat}
-                className="btn-secondary"
-                title="Reiniciar conversación"
-                style={{ padding: '8px 12px' }}
-              >
-                <RotateCcw size={16} />
-              </button>
-
-              {/* Evaluate Button */}
-              <button
-                onClick={handleEvaluate}
-                disabled={isEvaluating || isLoading}
-                className="btn-primary"
-                style={{ fontSize: '0.85rem', padding: '8px 14px' }}
-              >
-                <Award size={16} />
-                {isEvaluating ? 'Evaluando...' : 'Evaluar Venta'}
-              </button>
-            </div>
-          </div>
-
-          {/* Messages Scroll Area */}
-          <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {messages.map(msg => {
-              const isUser = msg.sender === 'user';
+            {CUSTOMER_PROFILES.map(profile => {
+              const isSelected = profile.id === selectedProfile.id;
               return (
                 <div
-                  key={msg.id}
+                  key={profile.id}
+                  onClick={() => handleSelectProfile(profile)}
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: isUser ? 'flex-end' : 'flex-start',
-                    maxWidth: '80%',
-                    alignSelf: isUser ? 'flex-end' : 'flex-start'
+                    padding: '10px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: isSelected ? 'rgba(255, 159, 28, 0.15)' : 'rgba(255,255,255,0.03)',
+                    border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                    cursor: 'pointer'
                   }}
                 >
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginBottom: '4px' }}>
-                    {isUser ? 'Tú (Vendedor)' : selectedProfile.name} • {msg.time}
-                  </span>
-
-                  <div style={{
-                    padding: '12px 16px',
-                    borderRadius: isUser ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
-                    background: isUser ? 'linear-gradient(135deg, var(--primary) 0%, #f77f00 100%)' : 'rgba(255, 255, 255, 0.08)',
-                    color: isUser ? '#000' : 'var(--text-main)',
-                    fontWeight: isUser ? 600 : 400,
-                    fontSize: '0.92rem',
-                    lineHeight: 1.5,
-                    border: isUser ? 'none' : '1px solid var(--border-color)',
-                    boxShadow: isUser ? '0 4px 12px rgba(255, 159, 28, 0.2)' : 'none'
-                  }}>
-                    {msg.text}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{profile.avatar} {profile.name}</span>
+                    <span className={`badge ${profile.badgeClass}`} style={{ fontSize: '0.6rem', padding: '2px 5px' }}>{profile.difficulty}</span>
                   </div>
+                  <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>{profile.occupation}</p>
                 </div>
               );
             })}
+          </div>
+        )}
+      </div>
 
-            {isLoading && (
-              <div style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '16px 16px 16px 2px' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{selectedProfile.name} está pensando su respuesta</span>
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  <div className="typing-dot" />
-                  <div className="typing-dot" />
-                  <div className="typing-dot" />
+      {/* Main Chat Box Container */}
+      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100dvh - 165px)', minHeight: '480px', overflow: 'hidden' }}>
+        
+        {/* Chat Control Bar */}
+        <div style={{
+          padding: '8px 14px',
+          borderBottom: '1px solid var(--border-color)',
+          background: 'rgba(0, 0, 0, 0.25)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--accent-green)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <span style={{ width: '6px', height: '6px', background: 'var(--accent-green)', borderRadius: '50%' }} />
+            Cliente en Vivo
+          </span>
+
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {/* Voice toggle */}
+            <button
+              onClick={() => setVoiceEnabled(!voiceEnabled)}
+              className="btn-secondary"
+              title={voiceEnabled ? "Desactivar voz del cliente" : "Activar voz del cliente"}
+              style={{ padding: '6px 10px', fontSize: '0.75rem' }}
+            >
+              {voiceEnabled ? <Volume2 size={15} color="var(--primary)" /> : <VolumeX size={15} />}
+            </button>
+
+            {/* Reset */}
+            <button
+              onClick={handleResetChat}
+              className="btn-secondary"
+              title="Reiniciar conversación"
+              style={{ padding: '6px 10px', fontSize: '0.75rem' }}
+            >
+              <RotateCcw size={15} />
+            </button>
+
+            {/* Evaluate Button */}
+            <button
+              onClick={handleEvaluate}
+              disabled={isEvaluating || isLoading}
+              className="btn-primary"
+              style={{ fontSize: '0.78rem', padding: '6px 12px' }}
+            >
+              <Award size={15} />
+              <span>{isEvaluating ? 'Evaluando...' : 'Evaluar'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Messages Scroll Area */}
+        <div style={{ flex: 1, padding: '14px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {messages.map(msg => {
+            const isUser = msg.sender === 'user';
+            return (
+              <div
+                key={msg.id}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: isUser ? 'flex-end' : 'flex-start',
+                  maxWidth: '86%',
+                  alignSelf: isUser ? 'flex-end' : 'flex-start'
+                }}
+              >
+                <span style={{ fontSize: '0.68rem', color: 'var(--text-dim)', marginBottom: '3px' }}>
+                  {isUser ? 'Tú (Vendedor)' : selectedProfile.name} • {msg.time}
+                </span>
+
+                <div style={{
+                  padding: '10px 14px',
+                  borderRadius: isUser ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
+                  background: isUser ? 'linear-gradient(135deg, var(--primary) 0%, #f77f00 100%)' : 'rgba(255, 255, 255, 0.08)',
+                  color: isUser ? '#000' : 'var(--text-main)',
+                  fontWeight: isUser ? 600 : 400,
+                  fontSize: '0.88rem',
+                  lineHeight: 1.45,
+                  border: isUser ? 'none' : '1px solid var(--border-color)',
+                  boxShadow: isUser ? '0 3px 10px rgba(255, 159, 28, 0.2)' : 'none'
+                }}>
+                  {msg.text}
                 </div>
               </div>
-            )}
+            );
+          })}
 
-            <div ref={chatEndRef} />
-          </div>
-
-          {/* Error Banner if any */}
-          {errorMsg && (
-            <div style={{ background: 'rgba(230, 57, 70, 0.15)', borderTop: '1px solid rgba(230, 57, 70, 0.3)', padding: '10px 20px', color: 'var(--accent-red)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertCircle size={16} /> {errorMsg}
+          {isLoading && (
+            <div style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '14px 14px 14px 2px' }}>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{selectedProfile.name} está pensando</span>
+              <div style={{ display: 'flex', gap: '3px' }}>
+                <div className="typing-dot" />
+                <div className="typing-dot" />
+                <div className="typing-dot" />
+              </div>
             </div>
           )}
 
-          {/* Input Form */}
-          <form onSubmit={handleSendMessage} style={{ padding: '16px 20px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.3)', display: 'flex', gap: '12px' }}>
-            <input
-              type="text"
-              placeholder={`Escribe tu argumento para responder a ${selectedProfile.name}...`}
-              value={inputMessage}
-              onChange={e => setInputMessage(e.target.value)}
-              disabled={isLoading}
-              style={{
-                flex: 1,
-                padding: '14px 18px',
-                background: 'var(--bg-input)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--text-main)',
-                fontSize: '0.93rem',
-                outline: 'none'
-              }}
-            />
-            <button
-              type="submit"
-              disabled={isLoading || !inputMessage.trim()}
-              className="btn-primary"
-              style={{ padding: '0 22px' }}
-            >
-              <Send size={18} />
-            </button>
-          </form>
-
+          <div ref={chatEndRef} />
         </div>
+
+        {/* Error Banner */}
+        {errorMsg && (
+          <div style={{ background: 'rgba(230, 57, 70, 0.15)', borderTop: '1px solid rgba(230, 57, 70, 0.3)', padding: '8px 14px', color: 'var(--accent-red)', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <AlertCircle size={14} /> {errorMsg}
+          </div>
+        )}
+
+        {/* Bottom Input Area with Microphone and Send Button */}
+        <form onSubmit={handleSendMessage} style={{ padding: '10px 12px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          
+          {/* Microphone Button */}
+          <button
+            type="button"
+            onClick={toggleRecording}
+            className={`btn-mic ${isRecording ? 'btn-mic-recording' : 'btn-mic-idle'}`}
+            title={isRecording ? "Detener grabación" : "Hablar por micrófono"}
+          >
+            {isRecording ? <Mic size={22} /> : <Mic size={20} />}
+          </button>
+
+          {/* Text Input */}
+          <input
+            type="text"
+            placeholder={isRecording ? "Escuchando tu voz... Habla ahora" : `Habla o escribe tu respuesta...`}
+            value={inputMessage}
+            onChange={e => setInputMessage(e.target.value)}
+            disabled={isLoading}
+            style={{
+              flex: 1,
+              padding: '12px 14px',
+              background: 'var(--bg-input)',
+              border: isRecording ? '1px solid var(--accent-red)' : '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-main)',
+              fontSize: '0.9rem',
+              outline: 'none'
+            }}
+          />
+
+          {/* Send Button */}
+          <button
+            type="submit"
+            disabled={isLoading || !inputMessage.trim()}
+            className="btn-primary"
+            style={{ padding: '0 16px', height: '46px', borderRadius: 'var(--radius-sm)' }}
+          >
+            <Send size={18} />
+          </button>
+        </form>
 
       </div>
 
