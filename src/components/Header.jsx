@@ -1,7 +1,17 @@
 import React from 'react';
-import { Bot, Key, BookOpen, MessageSquare, Award } from 'lucide-react';
+import { MessageSquare, Car, Trophy, MessageCircle, Calculator, Zap, BookOpen, Key } from 'lucide-react';
 
 export default function Header({ activeTab, setActiveTab, hasApiKey, onOpenSettings }) {
+  const tabs = [
+    { id: 'chat', label: 'Chat IA', icon: MessageSquare },
+    { id: 'car', label: 'Auto & Visitas', icon: Car },
+    { id: 'team', label: 'Equipo & Medallas', icon: Trophy },
+    { id: 'whatsapp', label: 'WhatsApp IA', icon: MessageCircle },
+    { id: 'calculator', label: 'Calculadora', icon: Calculator },
+    { id: 'flash', label: 'Desafío Flash', icon: Zap },
+    { id: 'guide', label: 'Guía', icon: BookOpen }
+  ];
+
   return (
     <header className="glass-panel" style={{ margin: '10px 12px', padding: '10px 14px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
@@ -23,36 +33,15 @@ export default function Header({ activeTab, setActiveTab, hasApiKey, onOpenSetti
           </div>
           <div>
             <h1 style={{ fontSize: '1.1rem', fontWeight: '800', lineHeight: 1.1 }}>
-              AutoCrédito <span style={{ color: 'var(--primary)' }}>Trainer IA</span>
+              AutoCrédito <span style={{ color: 'var(--primary)' }}>Hub IA</span>
             </h1>
             <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }} className="mobile-hide">
-              Simulador de Ventas y Objeciones
+              Plataforma Comercial y Operativa
             </p>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <nav style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.3)', padding: '3px', borderRadius: 'var(--radius-sm)' }}>
-          <button
-            className={activeTab === 'chat' ? 'btn-primary' : 'btn-secondary'}
-            onClick={() => setActiveTab('chat')}
-            style={{ fontSize: '0.8rem', padding: '6px 12px' }}
-          >
-            <MessageSquare size={15} />
-            <span>Chat</span>
-          </button>
-
-          <button
-            className={activeTab === 'guide' ? 'btn-primary' : 'btn-secondary'}
-            onClick={() => setActiveTab('guide')}
-            style={{ fontSize: '0.8rem', padding: '6px 12px' }}
-          >
-            <BookOpen size={15} />
-            <span>Guía</span>
-          </button>
-        </nav>
-
-        {/* API Key Status & Actions */}
+        {/* API Key Status */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button 
             onClick={onOpenSettings}
@@ -72,6 +61,41 @@ export default function Header({ activeTab, setActiveTab, hasApiKey, onOpenSetti
         </div>
 
       </div>
+
+      {/* Navigation Tabs Bar with horizontal scroll for mobile */}
+      <nav style={{
+        display: 'flex',
+        gap: '6px',
+        background: 'rgba(0,0,0,0.3)',
+        padding: '4px',
+        borderRadius: 'var(--radius-sm)',
+        marginTop: '10px',
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'none'
+      }}>
+        {tabs.map(tab => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              className={isActive ? 'btn-primary' : 'btn-secondary'}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                fontSize: '0.78rem',
+                padding: '7px 12px',
+                whiteSpace: 'nowrap',
+                gap: '6px',
+                border: isActive ? 'none' : '1px solid transparent'
+              }}
+            >
+              <Icon size={14} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </nav>
     </header>
   );
 }
