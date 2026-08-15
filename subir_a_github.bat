@@ -7,9 +7,7 @@ echo     SUBIR PROYECTO A GITHUB (EVITA CARGAR NODE_MODULES)
 echo =======================================================
 echo.
 echo NOTA: Este script requiere que tengas Git instalado en tu computadora.
-echo Si estas arrastrando los archivos a la web de GitHub, te da error
-echo porque intenta subir la carpeta node_modules (que tiene miles de archivos).
-echo Este script ignora esa carpeta automaticamente y sube solo lo necesario.
+echo Se subira automaticamente al repositorio configurado.
 echo.
 
 REM Comprobar si Git esta instalado
@@ -23,16 +21,12 @@ if errorlevel 1 (
     exit /b
 )
 
-REM Pedir la URL del repositorio
-set /p REPO_URL="Pega la URL de tu repositorio de GitHub (ej: https://github.com/tu-usuario/nombre-repo.git): "
+:: URL del repositorio preconfigurada
+set REPO_URL=https://github.com/papafrity/entrenamiento-autocredito.git
 
-if "%REPO_URL%"=="" (
-    echo El campo no puede estar vacio.
-    pause
-    exit /b
-)
-
+echo Repositorio objetivo: %REPO_URL%
 echo.
+
 echo [1/5] Inicializando repositorio local de Git...
 git init
 
@@ -42,7 +36,7 @@ git add .
 
 echo.
 echo [3/5] Guardando archivos localmente (Commit)...
-git commit -m "Subida inicial del Entrenador AutoCredito IA"
+git commit -m "Subida automatica del Entrenador AutoCredito IA"
 
 echo.
 echo [4/5] Configurando la rama principal como main...
