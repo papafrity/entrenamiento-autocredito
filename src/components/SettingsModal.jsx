@@ -1,14 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { X, Key, CheckCircle, ExternalLink, ShieldCheck } from 'lucide-react';
+import { X, Key, CheckCircle, ExternalLink, ShieldCheck, Database, Info } from 'lucide-react';
 import { getApiKey, saveApiKey } from '../services/geminiService';
+import { getFirebaseConfig, saveFirebaseConfig, isFirebaseActive } from '../services/firebase';
 
 export default function SettingsModal({ isOpen, onClose, onKeySaved }) {
+  // Gemini State
   const [inputKey, setInputKey] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Firebase Config State
+  const [fbApiKey, setFbApiKey] = useState('');
+  const [fbProjectId, setFbProjectId] = useState('');
+  const [fbAuthDomain, setFbAuthDomain] = useState('');
+  const [fbStorageBucket, setFbStorageBucket] = useState('');
+  const [fbMessagingSenderId, setFbMessagingSenderId] = useState('');
+  const [fbAppId, setFbAppId] = useState('');
+  const [firebaseActive, setFirebaseActive] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setInputKey(getApiKey());
+      setFirebaseActive(isFirebaseActive());
+      
+      const fbConfig = getFirebaseConfig();
+      if (fbConfig) {
+        setFbApiKey(fbConfig.apiKey || '');
+        setFbProjectId(fbConfig.projectId || '');
+        setFbAuthDomain(fbConfig.authDomain || '');
+        setFbStorageBucket(fbConfig.storageBucket || '');
+        setFbMessagingSenderId(fbConfig.messagingSenderId || '');
+        setFbAppId(fbConfig.appId || '');
+      }
       setSavedSuccess(false);
     }
   }, [isOpen]);
@@ -18,6 +40,21 @@ export default function SettingsModal({ isOpen, onClose, onKeySaved }) {
   const handleSave = (e) => {
     e.preventDefault();
     saveApiKey(inputKey);
+
+    if (fbApiKey.trim() && fbProjectId.trim()) {
+      const config = {
+        apiKey: fbApiKey.trim(),
+        projectId: fbProjectId.trim(),
+        authDomain: fbAuthDomain.trim(),
+        storageBucket: fbStorageBucket.trim(),
+        messagingSenderId: fbMessagingSenderId.trim(),
+        appId: fbAppId.trim()
+      };
+      saveFirebaseConfig(config);
+    } else if (!fbApiKey.trim() && !fbProjectId.trim()) {
+      saveFirebaseConfig(null);
+    }
+
     setSavedSuccess(true);
     setTimeout(() => {
       onKeySaved();
@@ -37,10 +74,10 @@ export default function SettingsModal({ isOpen, onClose, onKeySaved }) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 1000,
+      zIndex: 1200,
       padding: '20px'
     }}>
-      <div className="glass-panel" style={{ width: '100%', maxWidth: '520px', padding: '28px', position: 'relative' }}>
+      <div className="glass-panel" style={{ width: '100%', maxWidth: '560px', padding: '24px', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
         
         {/* Close Button */}
         <button 
@@ -63,15 +100,21 @@ export default function SettingsModal({ isOpen, onClose, onKeySaved }) {
             <Key size={24} color="var(--primary)" />
           </div>
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Configuración de API Key (Gratis)</h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Para activar las simulaciones con la IA de Gemini</p>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Configuración de Llaves e IA</h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Configurá tu Gemini API y sincronización de base de datos</p>
           </div>
         </div>
 
-        <form onSubmit={handleSave}>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, marginBottom: '8px' }}>
-              Google Gemini API Key:
+        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          
+          {/* SECCIÓN 1: GEMINI API KEY */}
+          <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '10px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              🤖 Google Gemini API (Chatbot)
+            </h3>
+            
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
+              Gemini API Key:
             </label>
             <input 
               type="password"
@@ -80,49 +123,84 @@ export default function SettingsModal({ isOpen, onClose, onKeySaved }) {
               placeholder="AIzaSy..."
               style={{
                 width: '100%',
-                padding: '12px 14px',
+                padding: '10px 12px',
                 background: 'var(--bg-input)',
                 border: '1px solid var(--border-color)',
                 borderRadius: 'var(--radius-sm)',
                 color: 'var(--text-main)',
-                fontSize: '0.95rem',
-                outline: 'none'
+                fontSize: '0.9rem',
+                outline: 'none',
+                marginBottom: '8px'
               }}
             />
+            <a href="https://aistudio.google.com/" target="_blank" rel="noreferrer" style={{ fontSize: '0.78rem', color: 'var(--secondary)', display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'underline' }}>
+              Obtener clave API gratuita de Google AI Studio <ExternalLink size={12} />
+            </a>
+          </div>
+
+          {/* SECCIÓN 2: FIREBASE CONFIG */}
+          <div>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '10px', color: 'var(--secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Database size={16} /> Firebase Firestore (Sincronización de Equipo)
+            </h3>
+
+            <div style={{ 
+              background: firebaseActive ? 'rgba(46, 196, 182, 0.08)' : 'rgba(0, 0, 0, 0.2)',
+              border: firebaseActive ? '1px solid rgba(46, 196, 182, 0.25)' : '1px solid var(--border-color)',
+              padding: '10px 12px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.78rem',
+              color: firebaseActive ? 'var(--accent-green)' : 'var(--text-muted)',
+              marginBottom: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <Info size={14} />
+              <span>
+                {firebaseActive 
+                  ? '🟢 Sincronización en la nube ACTIVA (Proyecto: entrenador-autocredito). Las reservas y medallas se comparten con todos los celulares.' 
+                  : '⚪ Modo local activo.'
+                }
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '8px' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Firebase API Key:</label>
+                <input 
+                  type="text"
+                  value={fbApiKey}
+                  onChange={(e) => setFbApiKey(e.target.value)}
+                  placeholder="AIzaSy..."
+                  style={{ width: '100%', padding: '8px 10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.82rem' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Project ID:</label>
+                <input 
+                  type="text"
+                  value={fbProjectId}
+                  onChange={(e) => setFbProjectId(e.target.value)}
+                  placeholder="entrenador-autocredito"
+                  style={{ width: '100%', padding: '8px 10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.82rem' }}
+                />
+              </div>
+            </div>
           </div>
 
           {savedSuccess && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-green)', marginBottom: '16px', fontSize: '0.9rem' }}>
-              <CheckCircle size={18} /> ¡API Key guardada correctamente!
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-green)', fontSize: '0.88rem' }}>
+              <CheckCircle size={18} /> ¡Configuración guardada correctamente! Reiniciando...
             </div>
           )}
 
-          <div style={{ 
-            background: 'rgba(0, 180, 216, 0.08)', 
-            border: '1px solid rgba(0, 180, 216, 0.2)',
-            borderRadius: 'var(--radius-sm)',
-            padding: '14px',
-            marginBottom: '20px',
-            fontSize: '0.85rem',
-            color: 'var(--text-muted)',
-            lineHeight: 1.5
-          }}>
-            <div style={{ fontWeight: 700, color: 'var(--secondary)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <ShieldCheck size={16} /> ¿Cómo obtener tu clave gratis en 1 minuto?
-            </div>
-            <ol style={{ paddingLeft: '18px' }}>
-              <li>Ingresa a <a href="https://aistudio.google.com/" target="_blank" rel="noreferrer" style={{ color: 'var(--secondary)', textDecoration: 'underline' }}>Google AI Studio <ExternalLink size={12} inline /></a> con tu cuenta de Google.</li>
-              <li>Haz clic en <strong>"Create API Key"</strong>.</li>
-              <li>Copia la clave y pégala aquí arriba. ¡No cuesta nada!</li>
-            </ol>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
             <button type="button" className="btn-secondary" onClick={onClose}>
               Cancelar
             </button>
             <button type="submit" className="btn-primary">
-              Guardar Clave
+              Guardar Cambios
             </button>
           </div>
         </form>

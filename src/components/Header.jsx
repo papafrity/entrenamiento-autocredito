@@ -1,7 +1,7 @@
 import React from 'react';
-import { MessageSquare, Car, Trophy, MessageCircle, Calculator, Zap, BookOpen, Key } from 'lucide-react';
+import { MessageSquare, Car, Trophy, MessageCircle, Calculator, Zap, BookOpen, Key, User } from 'lucide-react';
 
-export default function Header({ activeTab, setActiveTab, hasApiKey, onOpenSettings }) {
+export default function Header({ activeTab, setActiveTab, hasApiKey, onOpenSettings, currentUser, onOpenAuthModal }) {
   const tabs = [
     { id: 'chat', label: 'Chat IA', icon: MessageSquare },
     { id: 'car', label: 'Auto & Visitas', icon: Car },
@@ -41,8 +41,23 @@ export default function Header({ activeTab, setActiveTab, hasApiKey, onOpenSetti
           </div>
         </div>
 
-        {/* API Key Status */}
+        {/* Right Actions: User Switcher & API Key */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          
+          {/* Active Advisor Profile Button */}
+          <button
+            onClick={onOpenAuthModal}
+            className="btn-secondary"
+            style={{ fontSize: '0.78rem', padding: '6px 10px', gap: '6px' }}
+            title="Cambiar o registrar asesor"
+          >
+            <span>{currentUser?.avatar || '👨‍💼'}</span>
+            <span style={{ maxWidth: '100px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {currentUser?.name || 'Mi Asesor'}
+            </span>
+          </button>
+
+          {/* API Key Status */}
           <button 
             onClick={onOpenSettings}
             className="btn-secondary"
@@ -58,6 +73,7 @@ export default function Header({ activeTab, setActiveTab, hasApiKey, onOpenSetti
               {hasApiKey ? 'API OK' : 'Clave'}
             </span>
           </button>
+
         </div>
 
       </div>

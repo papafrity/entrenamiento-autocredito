@@ -9,20 +9,35 @@ import QuickObjectionsGame from './components/QuickObjectionsGame';
 import ObjectionsGuide from './components/ObjectionsGuide';
 import SettingsModal from './components/SettingsModal';
 import FeedbackModal from './components/FeedbackModal';
+import AdvisorAuthModal from './components/AdvisorAuthModal';
 import { getApiKey } from './services/geminiService';
-import { awardPointsToCurrentUser } from './services/storageService';
+import { getCurrentUserProfile, awardPointsToCurrentUser, subscribeToRealtimeUpdates } from './services/storageService';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('chat');
   const [hasApiKey, setHasApiKey] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(getCurrentUserProfile());
   const [currentFeedback, setCurrentFeedback] = useState(null);
   const [currentProfile, setCurrentProfile] = useState(null);
 
   useEffect(() => {
     checkApiKeyStatus();
+    loadCurrentUser();
+
+    const unsubscribe = subscribeToRealtimeUpdates((event) => {
+      if (event.type === 'USER_SWITCHED' || event.type === 'TEAM_UPDATED') {
+        loadCurrentUser();
+      }
+    });
+    return () => unsubscribe();
   }, []);
+
+  const loadCurrentUser = () => {
+    setCurrentUser(getCurrentUserProfile());
+  };
 
   const checkApiKeyStatus = () => {
     const key = getApiKey();
@@ -34,13 +49,13 @@ export default function App() {
     setCurrentProfile(profileData);
     setIsFeedbackOpen(true);
 
-    // Sumar puntos al ranking del equipo y desbloquear medalla si sacó buen puntaje
     if (feedbackData?.score) {
       let badgeToUnlock = null;
       if (feedbackData.score >= 80) {
         badgeToUnlock = profileData.id + '_master';
       }
       awardPointsToCurrentUser(feedbackData.score, badgeToUnlock);
+      loadCurrentUser();
     }
   };
 
@@ -52,7 +67,9 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         hasApiKey={hasApiKey}
+        currentUser={currentUser}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
       />
 
       {/* Main View Area */}
@@ -98,6 +115,12 @@ export default function App() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         onKeySaved={checkApiKeyStatus}
+      />
+
+      <AdvisorAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAdvisorChanged={loadCurrentUser}
       />
 
       <FeedbackModal 

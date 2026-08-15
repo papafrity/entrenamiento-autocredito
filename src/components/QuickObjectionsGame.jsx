@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { awardPointsToCurrentUser } from '../services/storageService';
-import { Zap, Clock, CheckCircle2, XCircle, Trophy, RotateCcw, Award } from 'lucide-react';
+import { Zap, Clock, CheckCircle2, XCircle, Trophy, RotateCcw, Play, Award, Sparkles, ShieldCheck } from 'lucide-react';
 
 const FLASH_QUESTIONS = [
   {
@@ -38,10 +38,20 @@ const FLASH_QUESTIONS = [
       { text: 'Existe una tabla de rescate aprobada por la IGJ que estipula el porcentaje recuperable.', isCorrect: true, explanation: 'El contrato cuenta con una tabla de valores de rescate oficial avalada por la IGJ.' },
       { text: 'Te devuelven el 100% al otro día sin ningún gasto de suscripción.', isCorrect: false }
     ]
+  },
+  {
+    id: 5,
+    objection: '“¿Por qué no me piden recibo de sueldo como en el banco?”',
+    options: [
+      { text: 'Porque vos estás ahorrando tu propio dinero y no adquiriendo una deuda con riesgo crediticio.', isCorrect: true, explanation: 'Al ser un plan de ahorro voluntario y no un préstamo bancario, solo se requiere DNI.' },
+      { text: 'Porque es una empresa informal que no pide papeles.', isCorrect: false },
+      { text: 'Porque el recibo de sueldo te lo piden después de salir sorteado obligatoriamente.', isCorrect: false }
+    ]
   }
 ];
 
 export default function QuickObjectionsGame() {
+  const [hasStarted, setHasStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(30);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -50,7 +60,7 @@ export default function QuickObjectionsGame() {
   const [isGameOver, setIsGameOver] = useState(false);
 
   useEffect(() => {
-    if (isGameOver || isAnswered) return;
+    if (!hasStarted || isGameOver || isAnswered) return;
 
     if (timeLeft <= 0) {
       handleTimeOut();
@@ -62,7 +72,17 @@ export default function QuickObjectionsGame() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, isGameOver, isAnswered]);
+  }, [hasStarted, timeLeft, isGameOver, isAnswered]);
+
+  const handleStartGame = () => {
+    setHasStarted(true);
+    setCurrentIndex(0);
+    setTimeLeft(30);
+    setSelectedOption(null);
+    setIsAnswered(false);
+    setScore(0);
+    setIsGameOver(false);
+  };
 
   const handleTimeOut = () => {
     setIsAnswered(true);
@@ -75,7 +95,7 @@ export default function QuickObjectionsGame() {
     setIsAnswered(true);
 
     if (isCorrect) {
-      setScore(prev => prev + 25);
+      setScore(prev => prev + 20);
     }
   };
 
@@ -87,19 +107,9 @@ export default function QuickObjectionsGame() {
       setIsAnswered(false);
     } else {
       setIsGameOver(true);
-      // Premiar con puntos al ranking
-      const totalPoints = score + (selectedOption !== null && FLASH_QUESTIONS[currentIndex].options[selectedOption]?.isCorrect ? 25 : 0);
-      awardPointsToCurrentUser(totalPoints, totalPoints >= 75 ? 'flash_master' : null);
+      const finalScore = score + (selectedOption !== null && FLASH_QUESTIONS[currentIndex].options[selectedOption]?.isCorrect ? 20 : 0);
+      awardPointsToCurrentUser(finalScore, finalScore >= 80 ? 'flash_master' : null);
     }
-  };
-
-  const handleRestart = () => {
-    setCurrentIndex(0);
-    setTimeLeft(30);
-    setSelectedOption(null);
-    setIsAnswered(false);
-    setScore(0);
-    setIsGameOver(false);
   };
 
   const currentQ = FLASH_QUESTIONS[currentIndex];
@@ -128,14 +138,66 @@ export default function QuickObjectionsGame() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {hasStarted && !isGameOver && (
           <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--primary)' }}>
             Puntaje: {score} pts
           </div>
-        </div>
+        )}
       </div>
 
-      {!isGameOver ? (
+      {/* Pantalla Inicial con Botón de Inicio */}
+      {!hasStarted && (
+        <div className="glass-panel" style={{ padding: '36px 24px', textAlign: 'center' }}>
+          <div style={{
+            width: '70px',
+            height: '70px',
+            borderRadius: '50%',
+            background: 'rgba(255, 159, 28, 0.15)',
+            border: '2px solid var(--primary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '2rem',
+            margin: '0 auto 16px auto'
+          }}>
+            🎯
+          </div>
+
+          <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px' }}>
+            ¿Estás listo para el Desafío Flash?
+          </h3>
+          
+          <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', maxWidth: '480px', margin: '0 auto 24px auto', lineHeight: 1.5 }}>
+            Te mostraremos 5 objeciones típicas de clientes de AutoCrédito. Tendrás <strong>30 segundos por pregunta</strong> para responder correctamente y acumular puntos para tu ranking del equipo.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', maxWidth: '520px', margin: '0 auto 28px auto', textAlign: 'left' }}>
+            <div style={{ background: 'rgba(0,0,0,0.25)', padding: '12px', borderRadius: 'var(--radius-sm)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Clock size={16} color="var(--primary)" />
+              <span>30 seg por objeción</span>
+            </div>
+            <div style={{ background: 'rgba(0,0,0,0.25)', padding: '12px', borderRadius: 'var(--radius-sm)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Trophy size={16} color="var(--accent-green)" />
+              <span>Hasta +100 pts de ranking</span>
+            </div>
+            <div style={{ background: 'rgba(0,0,0,0.25)', padding: '12px', borderRadius: 'var(--radius-sm)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Award size={16} color="var(--secondary)" />
+              <span>Insignia "Reflejos de Oro"</span>
+            </div>
+          </div>
+
+          <button
+            onClick={handleStartGame}
+            className="btn-primary"
+            style={{ fontSize: '1.05rem', padding: '14px 32px', gap: '10px', boxShadow: '0 6px 20px rgba(255, 159, 28, 0.4)' }}
+          >
+            <Play size={20} fill="#000" /> Comenzar Desafío Ahora
+          </button>
+        </div>
+      )}
+
+      {/* Pantalla del Juego Activo */}
+      {hasStarted && !isGameOver && (
         <div className="glass-panel" style={{ padding: '24px' }}>
           
           {/* Progress & Timer */}
@@ -242,7 +304,10 @@ export default function QuickObjectionsGame() {
           )}
 
         </div>
-      ) : (
+      )}
+
+      {/* Pantalla Final de Resultados */}
+      {hasStarted && isGameOver && (
         <div className="glass-panel" style={{ padding: '36px 20px', textAlign: 'center' }}>
           <Trophy size={60} color="var(--primary)" style={{ marginBottom: '16px' }} />
           <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '6px' }}>
@@ -252,8 +317,8 @@ export default function QuickObjectionsGame() {
             Has acumulado <strong>{score} puntos</strong> para tu ranking en el equipo.
           </p>
 
-          <div style={{ display: 'inline-flex', gap: '12px', marginBottom: '24px' }}>
-            <button onClick={handleRestart} className="btn-primary" style={{ padding: '10px 20px', gap: '8px' }}>
+          <div style={{ display: 'inline-flex', gap: '12px', marginBottom: '16px' }}>
+            <button onClick={handleStartGame} className="btn-primary" style={{ padding: '10px 20px', gap: '8px' }}>
               <RotateCcw size={16} /> Jugar de Nuevo
             </button>
           </div>

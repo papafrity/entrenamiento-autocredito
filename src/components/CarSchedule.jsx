@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { getCarReservations, addCarReservation, deleteCarReservation, getCurrentUserProfile, subscribeToRealtimeUpdates } from '../services/storageService';
-import { Calendar, Clock, MapPin, User, AlertTriangle, CheckCircle, Plus, Trash2, Share2, Car, ShieldAlert } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, MapPin, User, AlertTriangle, CheckCircle, Plus, Trash2, Share2, Car, ShieldAlert, ChevronLeft, ChevronRight, List, Grid, CalendarDays } from 'lucide-react';
 
 export default function CarSchedule() {
   const [reservations, setReservations] = useState([]);
   const [userProfile, setUserProfile] = useState(getCurrentUserProfile());
   const [showModal, setShowModal] = useState(false);
+  const [viewMode, setViewMode] = useState('month'); // 'list', 'month', 'week'
+  const [currentMonthDate, setCurrentMonthDate] = useState(new Date());
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-
-  // Filtro de fecha
-  const [filterDate, setFilterDate] = useState('todas');
 
   // Estado del formulario
   const [formClient, setFormClient] = useState('');
@@ -36,7 +35,7 @@ export default function CarSchedule() {
   };
 
   const handleCreateReservation = (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
 
@@ -69,7 +68,6 @@ export default function CarSchedule() {
       loadReservations();
       setShowModal(false);
       
-      // Limpiar campos
       setFormClient('');
       setFormDestination('');
       setFormPurpose('');
@@ -100,37 +98,75 @@ export default function CarSchedule() {
 
   const todayStr = new Date().toISOString().split('T')[0];
 
-  const filteredReservations = reservations.filter(r => {
-    if (filterDate === 'hoy') return r.date === todayStr;
-    if (filterDate === 'proximas') return r.date >= todayStr;
-    return true;
-  }).sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
+  // Helper para generar días del mes
+  const year = currentMonthDate.getFullYear();
+  const month = currentMonthDate.getMonth();
+  const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+  const firstDayIndex = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const calendarDays = [];
+  for (let i = 0; i < firstDayIndex; i++) {
+    calendarDays.push(null);
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    calendarDays.push(dStr);
+  }
+
+  const prevMonth = () => {
+    setCurrentMonthDate(new Date(year, month - 1, 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentMonthDate(new Date(year, month + 1, 1));
+  };
+
+  // Helper para semana actual
+  const getWeekDates = (baseDate) => {
+    const current = new Date(baseDate);
+    const day = current.getDay();
+    const diff = current.getDate() - day + (day === 0 ? -6 : 1); // lunes
+    const monday = new Date(current.setDate(diff));
+
+    const week = [];
+    for (let i = 0; i < 7; i++) {
+      const nextD = new Date(monday);
+      nextD.setDate(monday.getDate() + i);
+      week.push(nextD.toISOString().split('T')[0]);
+    }
+    return week;
+  };
+
+  const currentWeekDays = getWeekDates(currentMonthDate);
 
   return (
     <div style={{ padding: '0 12px 30px 12px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
       
       {/* Header Banner */}
-      <div className="glass-panel" style={{ padding: '20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="glass-panel" style={{ padding: '18px 20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{
             background: 'linear-gradient(135deg, var(--secondary) 0%, #0077b6 100%)',
-            width: '50px',
-            height: '50px',
-            borderRadius: '14px',
+            width: '46px',
+            height: '46px',
+            borderRadius: '12px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '1.6rem',
+            fontSize: '1.5rem',
             boxShadow: '0 4px 15px rgba(0, 180, 216, 0.3)'
           }}>
             🚗
           </div>
           <div>
-            <h2 style={{ fontSize: '1.35rem', fontWeight: 800 }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>
               Agenda y Reserva del <span style={{ color: 'var(--secondary)' }}>Auto de la Agencia</span>
             </h2>
-            <p style={{ fontSize: '0.83rem', color: 'var(--text-muted)' }}>
-              Organizá las salidas de asesoramiento presencial para que todo el equipo sepa cuándo el vehículo está ocupado.
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              Calendario interactivo para ver disponibilidad y reservar salidas de asesoramiento.
             </p>
           </div>
         </div>
@@ -138,60 +174,228 @@ export default function CarSchedule() {
         <button 
           onClick={() => { setShowModal(true); setErrorMsg(''); setSuccessMsg(''); }}
           className="btn-primary"
-          style={{ fontSize: '0.9rem', padding: '10px 18px' }}
+          style={{ fontSize: '0.88rem', padding: '10px 18px' }}
         >
           <Plus size={18} /> Reservar Auto
         </button>
       </div>
 
-      {/* Filter Tabs */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            className={filterDate === 'todas' ? 'btn-primary' : 'btn-secondary'}
-            onClick={() => setFilterDate('todas')}
-            style={{ fontSize: '0.8rem', padding: '6px 14px' }}
-          >
-            Todas las Salidas
-          </button>
-          <button
-            className={filterDate === 'hoy' ? 'btn-primary' : 'btn-secondary'}
-            onClick={() => setFilterDate('hoy')}
-            style={{ fontSize: '0.8rem', padding: '6px 14px' }}
-          >
-            Solo Hoy ({todayStr})
-          </button>
-          <button
-            className={filterDate === 'proximas' ? 'btn-primary' : 'btn-secondary'}
-            onClick={() => setFilterDate('proximas')}
-            style={{ fontSize: '0.8rem', padding: '6px 14px' }}
-          >
-            Próximas
-          </button>
-        </div>
-
-        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          {filteredReservations.length} {filteredReservations.length === 1 ? 'salida agendada' : 'salidas agendadas'}
-        </span>
-      </div>
-
       {/* Success Notification */}
       {successMsg && (
-        <div style={{ background: 'rgba(46, 196, 182, 0.15)', border: '1px solid rgba(46, 196, 182, 0.3)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', color: 'var(--accent-green)', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+        <div style={{ background: 'rgba(46, 196, 182, 0.15)', border: '1px solid rgba(46, 196, 182, 0.3)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', color: 'var(--accent-green)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
           <CheckCircle size={18} /> {successMsg}
         </div>
       )}
 
-      {/* Reservations Grid */}
-      {filteredReservations.length === 0 ? (
-        <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          <Car size={40} style={{ opacity: 0.3, marginBottom: '12px' }} />
-          <p style={{ fontSize: '1rem', fontWeight: 600 }}>El auto está 100% disponible</p>
-          <p style={{ fontSize: '0.82rem', marginTop: '4px' }}>No hay salidas agendadas para el filtro seleccionado.</p>
+      {/* Controls Bar: View Selector (Month, Week, List) + Month Navigation */}
+      <div className="glass-panel" style={{ padding: '12px 16px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        
+        {/* Month Navigation */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button onClick={prevMonth} className="btn-secondary" style={{ padding: '6px 10px' }}>
+            <ChevronLeft size={16} />
+          </button>
+          <strong style={{ fontSize: '1.05rem', minWidth: '160px', textAlign: 'center' }}>
+            {monthNames[month]} {year}
+          </strong>
+          <button onClick={nextMonth} className="btn-secondary" style={{ padding: '6px 10px' }}>
+            <ChevronRight size={16} />
+          </button>
         </div>
-      ) : (
+
+        {/* View Mode Buttons */}
+        <div style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.3)', padding: '3px', borderRadius: 'var(--radius-sm)' }}>
+          <button
+            className={viewMode === 'month' ? 'btn-primary' : 'btn-secondary'}
+            onClick={() => setViewMode('month')}
+            style={{ fontSize: '0.78rem', padding: '6px 12px' }}
+          >
+            <Grid size={14} /> Mes
+          </button>
+          <button
+            className={viewMode === 'week' ? 'btn-primary' : 'btn-secondary'}
+            onClick={() => setViewMode('week')}
+            style={{ fontSize: '0.78rem', padding: '6px 12px' }}
+          >
+            <CalendarDays size={14} /> Semana
+          </button>
+          <button
+            className={viewMode === 'list' ? 'btn-primary' : 'btn-secondary'}
+            onClick={() => setViewMode('list')}
+            style={{ fontSize: '0.78rem', padding: '6px 12px' }}
+          >
+            <List size={14} /> Lista
+          </button>
+        </div>
+
+      </div>
+
+      {/* VISTA 1: CALENDARIO MENSUAL */}
+      {viewMode === 'month' && (
+        <div className="glass-panel" style={{ padding: '16px', overflowX: 'auto' }}>
+          
+          {/* Day Headers */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(100px, 1fr))', gap: '6px', marginBottom: '6px', textAlign: 'center' }}>
+            {dayNames.map((name, i) => (
+              <div key={i} style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', padding: '6px 0' }}>
+                {name}
+              </div>
+            ))}
+          </div>
+
+          {/* Days Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(100px, 1fr))', gap: '6px' }}>
+            {calendarDays.map((dStr, idx) => {
+              if (!dStr) {
+                return <div key={idx} style={{ minHeight: '90px', background: 'rgba(0,0,0,0.1)', borderRadius: 'var(--radius-sm)', opacity: 0.2 }} />;
+              }
+
+              const dayNum = parseInt(dStr.split('-')[2], 10);
+              const dayReservations = reservations.filter(r => r.date === dStr);
+              const isToday = dStr === todayStr;
+
+              return (
+                <div
+                  key={idx}
+                  onClick={() => {
+                    setFormDate(dStr);
+                    setShowModal(true);
+                  }}
+                  style={{
+                    minHeight: '90px',
+                    padding: '8px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: isToday ? 'rgba(255, 159, 28, 0.08)' : 'rgba(255,255,255,0.02)',
+                    border: isToday ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  title="Haz clic para agendar reserva este día"
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isToday ? 'var(--primary)' : 'var(--text-main)' }}>
+                      {dayNum}
+                    </span>
+                    {dayReservations.length > 0 && (
+                      <span className="badge badge-medium" style={{ fontSize: '0.6rem', padding: '1px 5px' }}>
+                        {dayReservations.length} {dayReservations.length === 1 ? 'salida' : 'salidas'}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Reservations preview tags */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto' }}>
+                    {dayReservations.map(res => (
+                      <div
+                        key={res.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShareWhatsapp(res);
+                        }}
+                        style={{
+                          background: 'rgba(0, 180, 216, 0.2)',
+                          border: '1px solid rgba(0, 180, 216, 0.4)',
+                          borderRadius: '4px',
+                          padding: '3px 5px',
+                          fontSize: '0.68rem',
+                          color: '#fff',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          lineHeight: 1.2
+                        }}
+                      >
+                        <strong style={{ color: 'var(--secondary)' }}>{res.startTime}-{res.endTime}</strong>
+                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{res.advisorName} ({res.destination})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+        </div>
+      )}
+
+      {/* VISTA 2: VISTA SEMANAL */}
+      {viewMode === 'week' && (
+        <div className="glass-panel" style={{ padding: '16px', overflowX: 'auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(130px, 1fr))', gap: '8px' }}>
+            {currentWeekDays.map((dStr, idx) => {
+              const dayReservations = reservations.filter(r => r.date === dStr);
+              const isToday = dStr === todayStr;
+              const dObj = new Date(dStr + 'T00:00:00');
+              const dayName = dayNames[dObj.getDay()];
+              const dayNum = dObj.getDate();
+
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    minHeight: '260px',
+                    padding: '12px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: isToday ? 'rgba(255, 159, 28, 0.08)' : 'rgba(255,255,255,0.02)',
+                    border: isToday ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                >
+                  <div style={{ textAlign: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>{dayName}</span>
+                    <strong style={{ fontSize: '1.2rem', color: isToday ? 'var(--primary)' : 'var(--text-main)' }}>{dayNum}</strong>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                    {dayReservations.length === 0 ? (
+                      <p style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textAlign: 'center', margin: 'auto 0' }}>
+                        Auto Libre
+                      </p>
+                    ) : (
+                      dayReservations.map(res => (
+                        <div
+                          key={res.id}
+                          style={{
+                            background: 'rgba(0, 180, 216, 0.15)',
+                            border: '1px solid rgba(0, 180, 216, 0.3)',
+                            borderRadius: 'var(--radius-sm)',
+                            padding: '8px',
+                            fontSize: '0.75rem'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--primary)', fontWeight: 700, marginBottom: '2px' }}>
+                            <span>{res.startTime} a {res.endTime}</span>
+                          </div>
+                          <strong style={{ display: 'block', color: 'var(--text-main)' }}>{res.advisorName}</strong>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>📍 {res.destination}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setFormDate(dStr);
+                      setShowModal(true);
+                    }}
+                    className="btn-secondary"
+                    style={{ fontSize: '0.72rem', padding: '4px', marginTop: '10px', width: '100%' }}
+                  >
+                    + Agendar
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* VISTA 3: LISTADO DE SALIDAS */}
+      {viewMode === 'list' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
-          {filteredReservations.map(res => {
+          {reservations.map(res => {
             const isToday = res.date === todayStr;
             return (
               <div key={res.id} className="glass-card" style={{
@@ -201,8 +405,6 @@ export default function CarSchedule() {
                 flexDirection: 'column',
                 gap: '12px'
               }}>
-                
-                {/* Card Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '1.3rem' }}>👤</span>
@@ -217,7 +419,6 @@ export default function CarSchedule() {
                   </span>
                 </div>
 
-                {/* Details */}
                 <div style={{ background: 'rgba(0,0,0,0.2)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.84rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)' }}>
                     <Clock size={15} />
@@ -239,13 +440,11 @@ export default function CarSchedule() {
                   "{res.purpose}"
                 </p>
 
-                {/* Actions */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
                   <button
                     onClick={() => handleShareWhatsapp(res)}
                     className="btn-secondary"
                     style={{ fontSize: '0.78rem', padding: '6px 10px', gap: '6px', color: '#25D366', borderColor: 'rgba(37, 211, 102, 0.3)' }}
-                    title="Avisar al grupo de WhatsApp"
                   >
                     <Share2 size={14} /> Compartir en Grupo
                   </button>
@@ -254,12 +453,10 @@ export default function CarSchedule() {
                     onClick={() => handleDelete(res.id)}
                     className="btn-secondary"
                     style={{ fontSize: '0.78rem', padding: '6px 10px', color: 'var(--accent-red)', borderColor: 'rgba(230, 57, 70, 0.3)' }}
-                    title="Liberar auto"
                   >
                     <Trash2 size={14} />
                   </button>
                 </div>
-
               </div>
             );
           })}

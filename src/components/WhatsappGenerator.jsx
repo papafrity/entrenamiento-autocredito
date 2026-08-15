@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { getApiKey } from '../services/geminiService';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { MessageCircle, Copy, Check, Send, Sparkles, RefreshCw, Smartphone, ShieldAlert } from 'lucide-react';
+import { MessageCircle, Copy, Check, Send, Sparkles, RefreshCw, Smartphone, ShieldAlert, ChevronDown, ChevronUp, Bot } from 'lucide-react';
 
 export default function WhatsappGenerator({ hasApiKey, onOpenSettings }) {
+  const [copiedMessage, setCopiedMessage] = useState('');
   const [clientName, setClientName] = useState('');
-  const [situation, setSituation] = useState('');
   const [carOrGoal, setCarOrGoal] = useState('');
-  const [clientType, setClientType] = useState('duda_dinero');
+  const [clientType, setClientType] = useState('auto_context');
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [generatedOptions, setGeneratedOptions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
   const scenarios = [
+    { id: 'auto_context', label: '🤖 Detectar automáticamente por contexto del mensaje copiado' },
     { id: 'duda_dinero', label: 'Dice que no tiene plata este mes / le parece caro' },
     { id: 'compara_concesionaria', label: 'Está averiguando en una concesionaria oficial' },
     { id: 'desconfianza_sorteo', label: 'Tiene miedo o desconfianza con el sorteo' },
@@ -29,8 +31,8 @@ export default function WhatsappGenerator({ hasApiKey, onOpenSettings }) {
       return;
     }
 
-    if (!situation.trim() && !clientName.trim()) {
-      setErrorMsg('Ingresa al menos el nombre o la situación del cliente.');
+    if (!copiedMessage.trim() && !clientName.trim()) {
+      setErrorMsg('Por favor pega el mensaje de WhatsApp que te envió el cliente.');
       return;
     }
 
@@ -39,39 +41,45 @@ export default function WhatsappGenerator({ hasApiKey, onOpenSettings }) {
     setGeneratedOptions([]);
 
     const apiKey = getApiKey();
+    const activeScenario = scenarios.find(s => s.id === clientType)?.label;
+
     const prompt = `
 Actúa como un Asesor Comercial Estrella de AutoCrédito en Argentina.
-Genera 3 opciones de mensajes de WhatsApp persuasivos, cálidos y profesionales para enviar a un cliente potencial.
+Analiza el siguiente mensaje o conversación que el cliente envió por WhatsApp y redacta 3 opciones de respuesta persuasivas, cálidas y efectivas para continuar la venta o cerrar el plan.
 
-DATOS DEL CLIENTE:
-- Nombre del cliente: ${clientName.trim() || 'Estimado/a'}
-- Interés/Auto/Objetivo: ${carOrGoal.trim() || 'Auto 0km / Capital de Ahorro'}
-- Escenario/Objeción: ${scenarios.find(s => s.id === clientType)?.label || clientType}
-- Detalles adicionales: ${situation.trim() || 'Ninguno'}
+MENSAJE COPIADO DEL CLIENTE:
+"""
+${copiedMessage.trim() || 'El cliente está indeciso.'}
+"""
+
+CONTEXTO ADICIONAL:
+- Nombre del cliente: ${clientName.trim() || 'Estimado/a (adaptar si se deduce del mensaje)'}
+- Interés/Auto/Objetivo: ${carOrGoal.trim() || 'Plan de Capitalización / Auto 0km'}
+- Modo de detección: ${activeScenario}
 
 REGLAS DE FORMATO Y ESTILO:
-1. Español de Argentina, tono cercano, profesional y persuasivo (usa modismos como "mirá", "te comento", "buenas tardes", "¡un abrazo!").
-2. Incluye emojis apropiados para WhatsApp pero sin exagerar.
-3. Resalta la ventaja única de AutoCrédito: adjudicación por sorteo sin pagar más cuotas + respaldo IGJ.
+1. Español de Argentina, tono conversacional de WhatsApp: cálido, cercano, profesional y persuasivo (usa modismos argentinos como "mirá", "te comento", "buenas tardes", "¡un abrazo!").
+2. Incluye emojis apropiados para WhatsApp pero sin sobrecargar.
+3. Resalta la ventaja única de AutoCrédito según corresponda: adjudicación por sorteo sin pagar más cuotas + respaldo IGJ.
 4. Genera exactamente 3 enfoques distintos:
-   Opción 1: Enfoque Empático y de Ahorro Inteligente
-   Opción 2: Enfoque de Urgencia (Sorteo de fin de mes)
-   Opción 3: Enfoque Comparativo Directo (AutoCrédito vs Concesionaria/Banco)
+   Opción 1: Enfoque Empático y Cercano (Resolver la duda amablemente y hacer una pregunta de avance)
+   Opción 2: Enfoque de Urgencia / Sorteo de fin de mes (Aprovechar el cupo del sorteo más cercano)
+   Opción 3: Enfoque Comparativo Directo (AutoCrédito vs Bancos/Concesionarias o llamado a la acción claro)
 
-Responde ÚNICAMENTE en formato JSON con la siguiente estructura (sin markdown ni explicaciones adicionales):
+Responde ÚNICAMENTE en formato JSON con la siguiente estructura (sin markdown adicional):
 {
   "options": [
     {
-      "title": "Enfoque Empático",
-      "text": "Texto completo del mensaje de WhatsApp..."
+      "title": "Enfoque Empático y Cercano",
+      "text": "Texto completo del mensaje de WhatsApp listo para enviar..."
     },
     {
       "title": "Enfoque Urgencia Fin de Mes",
-      "text": "Texto completo del mensaje de WhatsApp..."
+      "text": "Texto completo del mensaje de WhatsApp listo para enviar..."
     },
     {
       "title": "Enfoque Comparativa de Valor",
-      "text": "Texto completo del mensaje de WhatsApp..."
+      "text": "Texto completo del mensaje de WhatsApp listo para enviar..."
     }
   ]
 }
@@ -129,10 +137,10 @@ Responde ÚNICAMENTE en formato JSON con la siguiente estructura (sin markdown n
         </div>
         <div>
           <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>
-            Generador de Mensajes para <span style={{ color: '#25D366' }}>WhatsApp con IA</span>
+            Generador de Respuestas para <span style={{ color: '#25D366' }}>WhatsApp con IA</span>
           </h2>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-            Creá mensajes de seguimiento, reactivación y cierre personalizados para tus clientes en 3 segundos.
+            Pegá lo que te escribió el cliente por WhatsApp y la IA detectará el contexto para redactarte 3 respuestas comerciales perfectas.
           </p>
         </div>
       </div>
@@ -142,63 +150,94 @@ Responde ÚNICAMENTE en formato JSON con la siguiente estructura (sin markdown n
         {/* Form Panel */}
         <div className="glass-panel" style={{ padding: '20px' }}>
           <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Sparkles size={18} color="var(--primary)" /> Datos del Prospecto
+            <Bot size={18} color="#25D366" /> Pegar Mensaje de WhatsApp
           </h3>
 
           <form onSubmit={handleGenerate} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            
             <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
-                Nombre del Cliente:
-              </label>
-              <input
-                type="text"
-                placeholder="Ej: Roberto Giménez"
-                value={clientName}
-                onChange={e => setClientName(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.88rem' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
-                Interés / Modelo de Auto / Capital:
-              </label>
-              <input
-                type="text"
-                placeholder="Ej: Cronos 0km / $15.000.000 / Plan Familiar"
-                value={carOrGoal}
-                onChange={e => setCarOrGoal(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.88rem' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
-                Situación o Motivo del Mensaje:
-              </label>
-              <select
-                value={clientType}
-                onChange={e => setClientType(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.85rem' }}
-              >
-                {scenarios.map(sc => (
-                  <option key={sc.id} value={sc.id}>{sc.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
-                ¿Qué te dijo el cliente? (Opcional):
+              <label style={{ fontSize: '0.82rem', fontWeight: 700, display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span>Mensaje o duda que te envió el cliente:</span>
+                <span style={{ fontSize: '0.72rem', color: 'var(--accent-green)' }}>Detección Automática Activa</span>
               </label>
               <textarea
-                rows={3}
-                placeholder="Ej: Me dijo que lo tiene que hablar con la señora y que le parece riesgoso el sorteo."
-                value={situation}
-                onChange={e => setSituation(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.85rem', resize: 'none' }}
+                rows={4}
+                placeholder="Pegá acá el texto copiado de WhatsApp. Ej: 'Hola, mira me interesa pero justo este mes ando medio justo con la guita, además no se cómo es eso del sorteo...'"
+                value={copiedMessage}
+                onChange={e => setCopiedMessage(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  background: 'var(--bg-input)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--text-main)',
+                  fontSize: '0.9rem',
+                  resize: 'vertical',
+                  lineHeight: 1.4
+                }}
               />
             </div>
+
+            {/* Toggle para opciones avanzadas / manuales */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                className="btn-secondary"
+                style={{ width: '100%', fontSize: '0.78rem', padding: '8px 12px', justifyContent: 'space-between' }}
+              >
+                <span>⚙️ Opciones manuales adicionales (Opcional)</span>
+                {showAdvancedOptions ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+              </button>
+            </div>
+
+            {showAdvancedOptions && (
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '14px', borderRadius: 'var(--radius-sm)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                    Tipo de Enfoque / Motivo:
+                  </label>
+                  <select
+                    value={clientType}
+                    onChange={e => setClientType(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.82rem' }}
+                  >
+                    {scenarios.map(sc => (
+                      <option key={sc.id} value={sc.id}>{sc.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                      Nombre del Cliente:
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Roberto"
+                      value={clientName}
+                      onChange={e => setClientName(e.target.value)}
+                      style={{ width: '100%', padding: '8px 10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.82rem' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                      Modelo / Plan:
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Cronos 0km"
+                      value={carOrGoal}
+                      onChange={e => setCarOrGoal(e.target.value)}
+                      style={{ width: '100%', padding: '8px 10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.82rem' }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {errorMsg && (
               <div style={{ background: 'rgba(230, 57, 70, 0.15)', border: '1px solid rgba(230, 57, 70, 0.3)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', color: 'var(--accent-red)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -208,17 +247,17 @@ Responde ÚNICAMENTE en formato JSON con la siguiente estructura (sin markdown n
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !copiedMessage.trim()}
               className="btn-primary"
               style={{ padding: '12px', fontSize: '0.9rem', width: '100%' }}
             >
               {isLoading ? (
                 <>
-                  <RefreshCw size={16} className="typing-dot" /> Redactando mensajes con IA...
+                  <RefreshCw size={16} className="typing-dot" /> Analizando contexto y redactando...
                 </>
               ) : (
                 <>
-                  <Sparkles size={16} /> Generar 3 Opciones de WhatsApp
+                  <Sparkles size={16} /> Generar 3 Respuestas de WhatsApp
                 </>
               )}
             </button>
@@ -230,9 +269,9 @@ Responde ÚNICAMENTE en formato JSON con la siguiente estructura (sin markdown n
           {generatedOptions.length === 0 ? (
             <div className="glass-panel" style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               <Smartphone size={40} style={{ opacity: 0.3, marginBottom: '12px' }} />
-              <p style={{ fontSize: '0.95rem', fontWeight: 600 }}>Completá los datos y generá tus mensajes</p>
+              <p style={{ fontSize: '0.95rem', fontWeight: 600 }}>Pegá el mensaje de WhatsApp del cliente</p>
               <p style={{ fontSize: '0.8rem', marginTop: '4px', maxWidth: '300px' }}>
-                La IA redactará 3 enfoques comerciales listos para copiar o enviar directamente a WhatsApp.
+                La IA detectará automáticamente la duda y te dará 3 opciones listas para mandar.
               </p>
             </div>
           ) : (
