@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { getCarReservations, addCarReservation, deleteCarReservation, getCurrentUserProfile, subscribeToRealtimeUpdates } from '../services/storageService';
-import { Calendar as CalendarIcon, Clock, MapPin, User, AlertTriangle, CheckCircle, Plus, Trash2, Share2, Car, ShieldAlert, ChevronLeft, ChevronRight, List, Grid, CalendarDays } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, MapPin, User, AlertTriangle, CheckCircle, Plus, Trash2, Share2, Car, ShieldAlert, ChevronLeft, ChevronRight, List, Grid, CalendarDays, UserPlus } from 'lucide-react';
 
-export default function CarSchedule() {
+export default function CarSchedule({ onOpenAuthModal }) {
   const [reservations, setReservations] = useState([]);
   const [userProfile, setUserProfile] = useState(getCurrentUserProfile());
   const [showModal, setShowModal] = useState(false);
@@ -25,6 +25,9 @@ export default function CarSchedule() {
       if (event.type === 'RESERVATIONS_UPDATED') {
         setReservations(event.payload);
       }
+      if (event.type === 'USER_SWITCHED' || event.type === 'TEAM_UPDATED') {
+        setUserProfile(getCurrentUserProfile());
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -34,10 +37,31 @@ export default function CarSchedule() {
     setUserProfile(getCurrentUserProfile());
   };
 
-  const handleCreateReservation = (e) => {
+  const handleOpenReservationModal = (targetDate = null) => {
+    const current = getCurrentUserProfile();
+    if (!current) {
+      onOpenAuthModal?.();
+      return;
+    }
+    if (targetDate) {
+      setFormDate(targetDate);
+    }
+    setErrorMsg('');
+    setSuccessMsg('');
+    setShowModal(true);
+  };
+
+  const handleCreateReservation = async (e) => {
     e?.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
+
+    const current = getCurrentUserProfile();
+    if (!current) {
+      setErrorMsg('Debes registrar tu nombre de asesor antes de reservar.');
+      onOpenAuthModal?.();
+      return;
+    }
 
     if (!formClient.trim() || !formDestination.trim() || !formPurpose.trim()) {
       setErrorMsg('Por favor completa todos los campos de la visita.');
@@ -51,9 +75,9 @@ export default function CarSchedule() {
 
     try {
       const newRes = {
-        advisorId: userProfile.id,
-        advisorName: userProfile.name,
-        advisorPhone: userProfile.phone || 'Sin teléfono',
+        advisorId: current.id,
+        advisorName: current.name,
+        advisorPhone: current.phone || 'Sin teléfono',
         clientName: formClient.trim(),
         destination: formDestination.trim(),
         date: formDate,
@@ -63,7 +87,7 @@ export default function CarSchedule() {
         status: 'confirmada'
       };
 
-      addCarReservation(newRes);
+      await addCarReservation(newRes);
       setSuccessMsg('¡Auto reservado con éxito! +50 pts acumulados en el ranking.');
       loadReservations();
       setShowModal(false);
@@ -76,9 +100,9 @@ export default function CarSchedule() {
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('¿Seguro que deseas liberar la reserva del auto?')) {
-      const updated = deleteCarReservation(id);
+      const updated = await deleteCarReservation(id);
       setReservations(updated);
     }
   };
@@ -166,13 +190,13 @@ export default function CarSchedule() {
               Agenda y Reserva del <span style={{ color: 'var(--secondary)' }}>Auto de la Agencia</span>
             </h2>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Calendario interactivo para ver disponibilidad y reservar salidas de asesoramiento.
+              Calendario en tiempo real para coordinar salidas de visitas con el auto.
             </p>
           </div>
         </div>
 
         <button 
-          onClick={() => { setShowModal(true); setErrorMsg(''); setSuccessMsg(''); }}
+          onClick={() => handleOpenReservationModal()}
           className="btn-primary"
           style={{ fontSize: '0.88rem', padding: '10px 18px' }}
         >
@@ -224,7 +248,7 @@ export default function CarSchedule() {
             onClick={() => setViewMode('list')}
             style={{ fontSize: '0.78rem', padding: '6px 12px' }}
           >
-            <List size={14} /> Lista
+            <List size={14} /> Lista ({reservations.length})
           </button>
         </div>
 
@@ -257,10 +281,7 @@ export default function CarSchedule() {
               return (
                 <div
                   key={idx}
-                  onClick={() => {
-                    setFormDate(dStr);
-                    setShowModal(true);
-                  }}
+                  onClick={() => handleOpenReservationModal(dStr)}
                   style={{
                     minHeight: '90px',
                     padding: '8px',
@@ -376,10 +397,7 @@ export default function CarSchedule() {
                   </div>
 
                   <button
-                    onClick={() => {
-                      setFormDate(dStr);
-                      setShowModal(true);
-                    }}
+                    onClick={() => handleOpenReservationModal(dStr)}
                     className="btn-secondary"
                     style={{ fontSize: '0.72rem', padding: '4px', marginTop: '10px', width: '100%' }}
                   >
@@ -395,71 +413,86 @@ export default function CarSchedule() {
       {/* VISTA 3: LISTADO DE SALIDAS */}
       {viewMode === 'list' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
-          {reservations.map(res => {
-            const isToday = res.date === todayStr;
-            return (
-              <div key={res.id} className="glass-card" style={{
-                padding: '18px',
-                borderLeft: isToday ? '4px solid var(--primary)' : '4px solid var(--secondary)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '1.3rem' }}>👤</span>
-                    <div>
-                      <strong style={{ fontSize: '0.95rem', color: 'var(--text-main)' }}>{res.advisorName}</strong>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{res.advisorPhone}</p>
+          {reservations.length === 0 ? (
+            <div className="glass-panel" style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', gridColumn: '1 / -1' }}>
+              <Car size={40} style={{ opacity: 0.3, marginBottom: '12px' }} />
+              <p style={{ fontSize: '1rem', fontWeight: 700 }}>No hay reservas agendadas en este momento</p>
+              <p style={{ fontSize: '0.82rem', marginTop: '4px' }}>El auto de la agencia se encuentra 100% disponible para salidas de visitas.</p>
+              <button
+                onClick={() => handleOpenReservationModal()}
+                className="btn-primary"
+                style={{ marginTop: '16px', fontSize: '0.85rem', padding: '8px 18px' }}
+              >
+                + Agendar Primera Visita
+              </button>
+            </div>
+          ) : (
+            reservations.map(res => {
+              const isToday = res.date === todayStr;
+              return (
+                <div key={res.id} className="glass-card" style={{
+                  padding: '18px',
+                  borderLeft: isToday ? '4px solid var(--primary)' : '4px solid var(--secondary)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.3rem' }}>👤</span>
+                      <div>
+                        <strong style={{ fontSize: '0.95rem', color: 'var(--text-main)' }}>{res.advisorName}</strong>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{res.advisorPhone}</p>
+                      </div>
+                    </div>
+
+                    <span className={`badge ${isToday ? 'badge-medium' : 'badge-easy'}`} style={{ fontSize: '0.7rem' }}>
+                      {isToday ? 'HOY' : res.date}
+                    </span>
+                  </div>
+
+                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.84rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)' }}>
+                      <Clock size={15} />
+                      <strong>{res.startTime} a {res.endTime} hs</strong>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-main)' }}>
+                      <MapPin size={15} color="var(--secondary)" />
+                      <span>{res.destination}</span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
+                      <User size={15} />
+                      <span>Cliente: <strong>{res.clientName}</strong></span>
                     </div>
                   </div>
 
-                  <span className={`badge ${isToday ? 'badge-medium' : 'badge-easy'}`} style={{ fontSize: '0.7rem' }}>
-                    {isToday ? 'HOY' : res.date}
-                  </span>
-                </div>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', fontStyle: 'italic' }}>
+                    "{res.purpose}"
+                  </p>
 
-                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.84rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)' }}>
-                    <Clock size={15} />
-                    <strong>{res.startTime} a {res.endTime} hs</strong>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
+                    <button
+                      onClick={() => handleShareWhatsapp(res)}
+                      className="btn-secondary"
+                      style={{ fontSize: '0.78rem', padding: '6px 10px', gap: '6px', color: '#25D366', borderColor: 'rgba(37, 211, 102, 0.3)' }}
+                    >
+                      <Share2 size={14} /> Compartir en Grupo
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(res.id)}
+                      className="btn-secondary"
+                      style={{ fontSize: '0.78rem', padding: '6px 10px', color: 'var(--accent-red)', borderColor: 'rgba(230, 57, 70, 0.3)' }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-main)' }}>
-                    <MapPin size={15} color="var(--secondary)" />
-                    <span>{res.destination}</span>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
-                    <User size={15} />
-                    <span>Cliente: <strong>{res.clientName}</strong></span>
-                  </div>
                 </div>
-
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', fontStyle: 'italic' }}>
-                  "{res.purpose}"
-                </p>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
-                  <button
-                    onClick={() => handleShareWhatsapp(res)}
-                    className="btn-secondary"
-                    style={{ fontSize: '0.78rem', padding: '6px 10px', gap: '6px', color: '#25D366', borderColor: 'rgba(37, 211, 102, 0.3)' }}
-                  >
-                    <Share2 size={14} /> Compartir en Grupo
-                  </button>
-
-                  <button
-                    onClick={() => handleDelete(res.id)}
-                    className="btn-secondary"
-                    style={{ fontSize: '0.78rem', padding: '6px 10px', color: 'var(--accent-red)', borderColor: 'rgba(230, 57, 70, 0.3)' }}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       )}
 
@@ -487,7 +520,9 @@ export default function CarSchedule() {
               </div>
               <div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Agendar Visita con el Auto</h3>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Asesor: {userProfile.name}</p>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  Asesor: {userProfile ? userProfile.name : 'Asesor'}
+                </p>
               </div>
             </div>
 
@@ -509,6 +544,7 @@ export default function CarSchedule() {
                   value={formClient}
                   onChange={e => setFormClient(e.target.value)}
                   style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.88rem' }}
+                  autoFocus
                 />
               </div>
 

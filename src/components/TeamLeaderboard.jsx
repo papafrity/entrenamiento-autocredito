@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { getTeamMembers, getCurrentUserProfile, updateCurrentUserProfile, subscribeToRealtimeUpdates } from '../services/storageService';
 import { BADGES_CATALOG } from '../data/teamData';
-import { Trophy, Award, Medal, Users, Edit3, Check, Star, ShieldCheck } from 'lucide-react';
+import { Trophy, Award, Medal, Users, Edit3, Check, Star, ShieldCheck, UserPlus } from 'lucide-react';
 
-export default function TeamLeaderboard() {
+export default function TeamLeaderboard({ onOpenAuthModal }) {
   const [team, setTeam] = useState(getTeamMembers());
   const [userProfile, setUserProfile] = useState(getCurrentUserProfile());
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [editName, setEditName] = useState(userProfile.name);
-  const [editBranch, setEditBranch] = useState(userProfile.branch);
-  const [editAvatar, setEditAvatar] = useState(userProfile.avatar);
+  const [editName, setEditName] = useState('');
+  const [editBranch, setEditBranch] = useState('');
+  const [editAvatar, setEditAvatar] = useState('👨‍💼');
 
   const avatarsList = ['👨‍💼', '👩‍💼', '🧑‍💻', '👨‍🔧', '👩‍💻', '🤵', '🦸‍♂️', '🏎️'];
 
@@ -24,19 +24,27 @@ export default function TeamLeaderboard() {
   }, []);
 
   const loadData = () => {
-    setTeam(getTeamMembers());
-    setUserProfile(getCurrentUserProfile());
+    const currentTeam = getTeamMembers();
+    const currentProf = getCurrentUserProfile();
+    setTeam(currentTeam);
+    setUserProfile(currentProf);
+    if (currentProf) {
+      setEditName(currentProf.name);
+      setEditBranch(currentProf.branch);
+      setEditAvatar(currentProf.avatar);
+    }
   };
 
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e?.preventDefault();
+    if (!userProfile) return;
     const updated = {
       ...userProfile,
       name: editName.trim() || 'Mi Asesor',
       branch: editBranch.trim() || 'Sucursal Central',
       avatar: editAvatar
     };
-    updateCurrentUserProfile(updated);
+    await updateCurrentUserProfile(updated);
     setUserProfile(updated);
     setIsEditingProfile(false);
     loadData();
@@ -44,7 +52,7 @@ export default function TeamLeaderboard() {
 
   // Ordenar miembros por puntos descendentes
   const sortedTeam = [...team].sort((a, b) => b.points - a.points);
-  const currentUser = team.find(t => t.id === 'user_current') || userProfile;
+  const activeUser = userProfile || (team.length > 0 ? team[0] : null);
 
   return (
     <div style={{ padding: '0 12px 30px 12px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
@@ -55,30 +63,49 @@ export default function TeamLeaderboard() {
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <span style={{ fontSize: '2.5rem', background: 'rgba(0,0,0,0.3)', padding: '6px', borderRadius: '50%' }}>
-              {userProfile.avatar}
+              {activeUser ? activeUser.avatar : '👤'}
             </span>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>{userProfile.name}</h2>
-                <span className="badge badge-medium" style={{ fontSize: '0.68rem' }}>{userProfile.branch}</span>
+                <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>
+                  {activeUser ? activeUser.name : 'Asesor No Registrado'}
+                </h2>
+                {activeUser && (
+                  <span className="badge badge-medium" style={{ fontSize: '0.68rem' }}>{activeUser.branch}</span>
+                )}
               </div>
               <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                ⭐ {currentUser.points || 0} Puntos Totales • 🎯 {currentUser.simulationsCompleted || 0} Simulaciones Aprobadas
+                {activeUser 
+                  ? `⭐ ${activeUser.points || 0} Puntos Totales • 🎯 ${activeUser.simulationsCompleted || 0} Simulaciones Aprobadas`
+                  : 'Registrate para empezar a sumar puntos en el ranking y desbloquear medallas.'
+                }
               </p>
             </div>
           </div>
 
-          <button
-            onClick={() => setIsEditingProfile(!isEditingProfile)}
-            className="btn-secondary"
-            style={{ fontSize: '0.8rem', padding: '8px 14px' }}
-          >
-            <Edit3 size={15} /> {isEditingProfile ? 'Cerrar Edición' : 'Editar Perfil'}
-          </button>
+          <div>
+            {activeUser ? (
+              <button
+                onClick={() => setIsEditingProfile(!isEditingProfile)}
+                className="btn-secondary"
+                style={{ fontSize: '0.8rem', padding: '8px 14px' }}
+              >
+                <Edit3 size={15} /> {isEditingProfile ? 'Cerrar Edición' : 'Editar Perfil'}
+              </button>
+            ) : (
+              <button
+                onClick={onOpenAuthModal}
+                className="btn-primary"
+                style={{ fontSize: '0.82rem', padding: '8px 16px', gap: '6px' }}
+              >
+                <UserPlus size={15} /> Registrar Mi Perfil
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Profile Edit Form */}
-        {isEditingProfile && (
+        {isEditingProfile && activeUser && (
           <form onSubmit={handleSaveProfile} style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', alignItems: 'flex-end' }}>
             <div>
               <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Nombre del Asesor:</label>
@@ -134,66 +161,79 @@ export default function TeamLeaderboard() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
             <Trophy size={22} color="var(--primary)" />
             <div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }}>Ranking del Equipo</h3>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }}>Ranking del Equipo ({team.length} asesores)</h3>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Puntos por ventas simuladas, objeciones y visitas</p>
             </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {sortedTeam.map((member, index) => {
-              const isFirst = index === 0;
-              const isSecond = index === 1;
-              const isThird = index === 2;
-              const isCurrent = member.id === 'user_current';
-
-              return (
-                <div
-                  key={member.id}
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: isCurrent ? 'rgba(255, 159, 28, 0.15)' : 'rgba(255,255,255,0.03)',
-                    border: isCurrent ? '1px solid var(--primary)' : '1px solid var(--border-color)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}
+            {sortedTeam.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px 16px', color: 'var(--text-muted)' }}>
+                <p style={{ fontSize: '0.9rem', marginBottom: '10px' }}>Aún no hay asesores registrados en el equipo.</p>
+                <button
+                  onClick={onOpenAuthModal}
+                  className="btn-primary"
+                  style={{ fontSize: '0.82rem', padding: '8px 16px' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      background: isFirst ? 'var(--primary)' : isSecond ? '#94a3b8' : isThird ? '#cd7f32' : 'rgba(255,255,255,0.1)',
-                      color: isFirst || isSecond || isThird ? '#000' : 'var(--text-muted)',
-                      fontWeight: 800,
+                  ¡Sé el primero en registrarte!
+                </button>
+              </div>
+            ) : (
+              sortedTeam.map((member, index) => {
+                const isFirst = index === 0;
+                const isSecond = index === 1;
+                const isThird = index === 2;
+                const isCurrent = activeUser && member.id === activeUser.id;
+
+                return (
+                  <div
+                    key={member.id}
+                    style={{
+                      padding: '12px 14px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: isCurrent ? 'rgba(255, 159, 28, 0.15)' : 'rgba(255,255,255,0.03)',
+                      border: isCurrent ? '1px solid var(--primary)' : '1px solid var(--border-color)',
                       display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '0.85rem'
-                    }}>
-                      {index + 1}
-                    </div>
-
-                    <span style={{ fontSize: '1.4rem' }}>{member.avatar}</span>
-
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.92rem' }}>
-                        {member.name} {isCurrent && <span style={{ color: 'var(--primary)', fontSize: '0.75rem' }}>(Tú)</span>}
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        background: isFirst ? 'var(--primary)' : isSecond ? '#94a3b8' : isThird ? '#cd7f32' : 'rgba(255,255,255,0.1)',
+                        color: isFirst || isSecond || isThird ? '#000' : 'var(--text-muted)',
+                        fontWeight: 800,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.85rem'
+                      }}>
+                        {index + 1}
                       </div>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                        {member.branch} • {member.simulationsCompleted || 0} simulaciones
-                      </span>
+
+                      <span style={{ fontSize: '1.4rem' }}>{member.avatar}</span>
+
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.92rem' }}>
+                          {member.name} {isCurrent && <span style={{ color: 'var(--primary)', fontSize: '0.75rem' }}>(Tú)</span>}
+                        </div>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                          {member.branch} • {member.simulationsCompleted || 0} simulaciones
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: 'right' }}>
+                      <strong style={{ fontSize: '1.05rem', color: 'var(--primary)' }}>{member.points}</strong>
+                      <p style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>pts</p>
                     </div>
                   </div>
-
-                  <div style={{ textAlign: 'right' }}>
-                    <strong style={{ fontSize: '1.05rem', color: 'var(--primary)' }}>{member.points}</strong>
-                    <p style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>pts</p>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -209,7 +249,7 @@ export default function TeamLeaderboard() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: '10px' }}>
             {BADGES_CATALOG.map(badge => {
-              const isUnlocked = currentUser.unlockedBadges?.includes(badge.id);
+              const isUnlocked = activeUser?.unlockedBadges?.includes(badge.id);
               return (
                 <div
                   key={badge.id}

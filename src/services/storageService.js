@@ -2,8 +2,8 @@ import { INITIAL_TEAM_MEMBERS, INITIAL_CAR_RESERVATIONS } from '../data/teamData
 import { db, isFirebaseActive } from './firebase';
 import { collection, doc, setDoc, getDocs, onSnapshot, updateDoc, deleteDoc } from 'firebase/firestore';
 
-const TEAM_STORAGE_KEY = 'autocredito_team_members';
-const RESERVATIONS_STORAGE_KEY = 'autocredito_car_reservations';
+const TEAM_STORAGE_KEY = 'autocredito_team_members_v2';
+const RESERVATIONS_STORAGE_KEY = 'autocredito_car_reservations_v2';
 const ACTIVE_ADVISOR_ID_KEY = 'autocredito_active_advisor_id';
 
 const broadcastChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('autocredito_sync_channel') : null;
@@ -26,10 +26,8 @@ if (isFirebaseActive()) {
     onSnapshot(collection(db, 'advisors'), (snapshot) => {
       const list = [];
       snapshot.forEach(doc => list.push(doc.data()));
-      if (list.length > 0) {
-        localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(list));
-        onSyncCallback?.({ type: 'TEAM_UPDATED', payload: list });
-      }
+      localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(list));
+      onSyncCallback?.({ type: 'TEAM_UPDATED', payload: list });
     });
   } catch (err) {
     console.error('Error al suscribir listeners en Firestore:', err);
@@ -43,13 +41,14 @@ export function getTeamMembers() {
   const data = localStorage.getItem(TEAM_STORAGE_KEY);
   if (data) {
     try {
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      // Filtrar posibles mocks viejos
+      return parsed.filter(m => m.id !== 'user_current' && m.id !== 'lucas_p' && m.id !== 'camila_m' && m.id !== 'martin_s');
     } catch (e) {
       console.error(e);
     }
   }
-  localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(INITIAL_TEAM_MEMBERS));
-  return INITIAL_TEAM_MEMBERS;
+  return [];
 }
 
 /**
@@ -75,16 +74,18 @@ export async function saveTeamMembers(members) {
  * Obtiene el ID del asesor activo
  */
 export function getActiveAdvisorId() {
-  const activeId = localStorage.getItem(ACTIVE_ADVISOR_ID_KEY);
-  if (activeId) return activeId;
-  return 'user_current';
+  return localStorage.getItem(ACTIVE_ADVISOR_ID_KEY) || null;
 }
 
 /**
  * Establece el asesor activo
  */
 export function setActiveAdvisorId(id) {
-  localStorage.setItem(ACTIVE_ADVISOR_ID_KEY, id);
+  if (id) {
+    localStorage.setItem(ACTIVE_ADVISOR_ID_KEY, id);
+  } else {
+    localStorage.removeItem(ACTIVE_ADVISOR_ID_KEY);
+  }
   broadcastChannel?.postMessage({ type: 'USER_SWITCHED', payload: id });
 }
 
@@ -94,20 +95,14 @@ export function setActiveAdvisorId(id) {
 export function getCurrentUserProfile() {
   const activeId = getActiveAdvisorId();
   const team = getTeamMembers();
-  const found = team.find(t => t.id === activeId);
-  if (found) return found;
-
-  const defaultUser = {
-    id: 'user_current',
-    name: 'Mi Asesor (Tú)',
-    avatar: '👨‍💼',
-    branch: 'Sucursal Central',
-    phone: '11-3344-5566',
-    points: 320,
-    simulationsCompleted: 4,
-    unlockedBadges: ['esceptico_master', 'apurado_master']
-  };
-  return defaultUser;
+  if (activeId) {
+    const found = team.find(t => t.id === activeId);
+    if (found) return found;
+  }
+  if (team.length > 0) {
+    return team[0];
+  }
+  return null;
 }
 
 /**
@@ -153,8 +148,10 @@ export async function updateCurrentUserProfile(profile) {
  */
 export async function awardPointsToCurrentUser(pointsToAdd, badgeToUnlock = null) {
   const team = getTeamMembers();
-  const activeId = getActiveAdvisorId();
-  const index = team.findIndex(t => t.id === activeId);
+  const activeUser = getCurrentUserProfile();
+  if (!activeUser) return null;
+
+  const index = team.findIndex(t => t.id === activeUser.id);
   
   if (index !== -1) {
     const user = team[index];
@@ -172,6 +169,7 @@ export async function awardPointsToCurrentUser(pointsToAdd, badgeToUnlock = null
     await saveTeamMembers(team);
     return user;
   }
+  return null;
 }
 
 /**
@@ -181,13 +179,14 @@ export function getCarReservations() {
   const data = localStorage.getItem(RESERVATIONS_STORAGE_KEY);
   if (data) {
     try {
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      // Filtrar posibles reservas viejas de prueba
+      return parsed.filter(r => r.id !== 'res_1' && r.id !== 'res_2');
     } catch (e) {
       console.error(e);
     }
   }
-  localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(INITIAL_CAR_RESERVATIONS));
-  return INITIAL_CAR_RESERVATIONS;
+  return [];
 }
 
 /**

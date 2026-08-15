@@ -83,11 +83,15 @@ export default function App() {
         )}
 
         {activeTab === 'car' && (
-          <CarSchedule />
+          <CarSchedule 
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          />
         )}
 
         {activeTab === 'team' && (
-          <TeamLeaderboard />
+          <TeamLeaderboard 
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          />
         )}
 
         {activeTab === 'whatsapp' && (

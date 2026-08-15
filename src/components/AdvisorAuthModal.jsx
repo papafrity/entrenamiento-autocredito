@@ -1,18 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getTeamMembers, registerNewAdvisor, setActiveAdvisorId, getCurrentUserProfile } from '../services/storageService';
-import { UserPlus, Users, Check, X, ShieldCheck, Sparkles } from 'lucide-react';
+import { UserPlus, Users, Check, X, ShieldCheck, Sparkles, UserCheck } from 'lucide-react';
 
 export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) {
-  const [activeTab, setActiveTab] = useState('select'); // 'select' o 'register'
-  const [team, setTeam] = useState(getTeamMembers());
-  const [currentUser, setCurrentUser] = useState(getCurrentUserProfile());
+  const team = getTeamMembers();
+  const currentUser = getCurrentUserProfile();
 
-  // Form state para nuevo asesor
+  const [activeTab, setActiveTab] = useState(team.length === 0 ? 'register' : 'select');
   const [newName, setNewName] = useState('');
   const [newBranch, setNewBranch] = useState('Sucursal Central');
   const [newPhone, setNewPhone] = useState('');
   const [newAvatar, setNewAvatar] = useState('👨‍💼');
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      const currentTeam = getTeamMembers();
+      if (currentTeam.length === 0) {
+        setActiveTab('register');
+      }
+    }
+  }, [isOpen]);
 
   const avatars = ['👨‍💼', '👩‍💼', '🧑‍💻', '👨‍🔧', '👩‍💻', '🤵', '🦸‍♂️', '🏎️'];
 
@@ -24,7 +32,7 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
     onClose();
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -33,7 +41,7 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
       return;
     }
 
-    const created = registerNewAdvisor({
+    await registerNewAdvisor({
       name: newName,
       branch: newBranch,
       phone: newPhone,
@@ -76,7 +84,7 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
           <div>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Perfil de Asesor Comercial</h3>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              Actualmente usando la app como: <strong>{currentUser.name}</strong>
+              {currentUser ? `Actualmente usando la app como: ${currentUser.name}` : 'Registrate para empezar a sumar puntos y agendar el auto'}
             </p>
           </div>
         </div>
@@ -87,9 +95,10 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
             type="button"
             className={activeTab === 'select' ? 'btn-primary' : 'btn-secondary'}
             onClick={() => setActiveTab('select')}
-            style={{ flex: 1, fontSize: '0.82rem', padding: '8px' }}
+            disabled={team.length === 0}
+            style={{ flex: 1, fontSize: '0.82rem', padding: '8px', opacity: team.length === 0 ? 0.5 : 1 }}
           >
-            <Users size={14} /> Seleccionar Mi Usuario
+            <Users size={14} /> Seleccionar Mi Usuario ({team.length})
           </button>
           <button
             type="button"
@@ -104,40 +113,54 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
         {/* Tab 1: Seleccionar Asesor Existente */}
         {activeTab === 'select' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '320px', overflowY: 'auto' }}>
-            {team.map(member => {
-              const isSelected = member.id === currentUser.id;
-              return (
-                <div
-                  key={member.id}
-                  onClick={() => handleSelectAdvisor(member.id)}
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: isSelected ? 'rgba(255, 159, 28, 0.15)' : 'rgba(255,255,255,0.03)',
-                    border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border-color)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    cursor: 'pointer'
-                  }}
+            {team.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
+                <p>Aún no hay asesores registrados en el equipo.</p>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('register')}
+                  className="btn-primary"
+                  style={{ marginTop: '12px', fontSize: '0.82rem', padding: '8px 16px' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '1.4rem' }}>{member.avatar}</span>
-                    <div>
-                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>{member.name}</strong>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{member.branch}</p>
+                  Registrar mi Asesor
+                </button>
+              </div>
+            ) : (
+              team.map(member => {
+                const isSelected = currentUser && member.id === currentUser.id;
+                return (
+                  <div
+                    key={member.id}
+                    onClick={() => handleSelectAdvisor(member.id)}
+                    style={{
+                      padding: '12px 14px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: isSelected ? 'rgba(255, 159, 28, 0.15)' : 'rgba(255,255,255,0.03)',
+                      border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '1.4rem' }}>{member.avatar}</span>
+                      <div>
+                        <strong style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>{member.name}</strong>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{member.branch}</p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--primary)', fontWeight: 700 }}>
+                        {member.points} pts
+                      </span>
+                      {isSelected && <Check size={18} color="var(--accent-green)" />}
                     </div>
                   </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '0.82rem', color: 'var(--primary)', fontWeight: 700 }}>
-                      {member.points} pts
-                    </span>
-                    {isSelected && <Check size={18} color="var(--accent-green)" />}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         )}
 
@@ -146,25 +169,26 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
           <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div>
               <label style={{ fontSize: '0.78rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
-                Nombre y Apellido:
+                Nombre y Apellido del Asesor:
               </label>
               <input
                 type="text"
-                placeholder="Ej: Laura Gómez"
+                placeholder="Ej: Marcelo Fernández"
                 value={newName}
                 onChange={e => setNewName(e.target.value)}
                 style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.88rem' }}
+                autoFocus
               />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div>
                 <label style={{ fontSize: '0.78rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
-                  Sucursal / Zona:
+                  Sucursal / Agencia:
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej: Sucursal Oeste"
+                  placeholder="Ej: Agencia Central"
                   value={newBranch}
                   onChange={e => setNewBranch(e.target.value)}
                   style={{ width: '100%', padding: '8px 10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.82rem' }}
@@ -215,7 +239,7 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
             )}
 
             <button type="submit" className="btn-primary" style={{ padding: '12px', fontSize: '0.9rem', marginTop: '8px' }}>
-              <Sparkles size={16} /> Crear Usuario y Entrar (+100 pts de bienvenida)
+              <Sparkles size={16} /> Crear Perfil de Asesor (+100 pts de bienvenida)
             </button>
           </form>
         )}
