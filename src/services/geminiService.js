@@ -4,8 +4,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const _k = 'QVEuQWI4Uk42SUFrTGRXdFFoYjBtLVhnTC1NdUM2NXZWeHJNQlZTTkNYZ25faWxTb0x4TWc=';
 const EMBEDDED_API_KEY = typeof atob !== 'undefined' ? atob(_k) : '';
 
-// Modelos soportados en orden de prioridad
-const GEMINI_MODELS = ['gemini-3.7-flash', 'gemini-3.5-flash', 'gemini-3-flash-preview'];
+// Modelos rápidos y fluidos en orden de prioridad
+const GEMINI_MODELS = ['gemini-3-flash-preview', 'gemini-3.5-flash', 'gemini-3.7-flash'];
 
 /**
  * Obtiene la API Key preconfigurada
@@ -30,7 +30,7 @@ export function saveApiKey(key) {
 }
 
 /**
- * Llamada resiliente a Gemini API que prueba los modelos disponibles
+ * Llamada ultra-rápida y resiliente a Gemini API sin truncamiento
  */
 async function callGeminiApi(payload) {
   const apiKey = getApiKey();
@@ -51,11 +51,19 @@ async function callGeminiApi(payload) {
 
       if (response.ok) {
         const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) return text;
+        const parts = data.candidates?.[0]?.content?.parts || [];
+        // Extraer texto limpio ignorando pensamientos internos
+        const fullText = parts
+          .filter(p => p.text && !p.thought)
+          .map(p => p.text)
+          .join('') || parts[0]?.text;
+
+        if (fullText && fullText.trim()) {
+          return fullText.trim();
+        }
       } else {
         const errData = await response.json().catch(() => ({}));
-        lastError = new Error(errData.error?.message || `Error ${response.status} en modelo ${modelName}`);
+        lastError = new Error(errData.error?.message || `Error ${response.status} en ${modelName}`);
       }
     } catch (err) {
       lastError = err;
@@ -77,11 +85,12 @@ Tu objetivo/preocupación principal es: ${profile.goal}.
 Nivel de dificultad del cliente: ${profile.difficulty}.
 
 REGLAS DE ACTUACIÓN (SÚPER IMPORTANTE):
-1. Mantén SIEMPRE tu personaje argentino de manera natural. Usa modismos argentinos cotidianos pero creíbles (ej: "mirá", "che", "posta", "cuota", "pesos", "estafa", "0km", "concesionaria").
-2. NO aceptes comprar el plan inmediatamente. Presenta las objeciones típicas de tu perfil: ${profile.objections.join(' | ')}.
-3. Si el vendedor te explica bien las ventajas (sorteo mensual con adjudicación sin pagar más cuotas vs préstamos o concesionarias, regulación por IGJ), puedes ir mostrando apertura o hacer preguntas más avanzadas.
-4. Si el vendedor confunde conceptos (ej: te dice que es un préstamo bancario o que te garantizan la entrega del auto en cuota 2 sin sorteo), cuestiona su respuesta como un cliente realista.
-5. Mantén tus respuestas en un tono de chat (de 2 a 4 oraciones como máximo), directas y realistas.
+1. Habla SIEMPRE como un argentino real en un chat: respuestas directas, naturales y creíbles (máximo 2 a 3 oraciones por mensaje).
+2. Usa modismos argentinos cotidianos (ej: "mirá", "che", "posta", "cuota", "pesos", "estafa", "0km", "concesionaria", "laburo", "chanta").
+3. NO aceptes comprar el plan inmediatamente. Presenta las objeciones típicas de tu perfil: ${profile.objections.join(' | ')}.
+4. Si el vendedor te explica bien las ventajas (sorteo mensual con adjudicación sin pagar más cuotas vs préstamos o concesionarias, regulación por IGJ), puedes ir mostrando apertura o hacer preguntas más avanzadas.
+5. Si el vendedor confunde conceptos (ej: te dice que es un préstamo bancario o que te garantizan la entrega en cuota 2 sin sorteo), cuestiona su respuesta.
+6. TERMINA SIEMPRE tus oraciones de forma completa, nunca dejes frases cortadas.
 `;
 
   const contents = chatHistory.map(msg => ({
@@ -96,7 +105,8 @@ REGLAS DE ACTUACIÓN (SÚPER IMPORTANTE):
     },
     generationConfig: {
       temperature: 0.7,
-      maxOutputTokens: 350
+      maxOutputTokens: 1000,
+      thinkingConfig: { thinkingBudget: 0 }
     }
   };
 
@@ -138,7 +148,9 @@ Responde ÚNICAMENTE en formato JSON válido con la siguiente estructura (sin si
     ],
     generationConfig: {
       temperature: 0.3,
-      responseMimeType: 'application/json'
+      maxOutputTokens: 1500,
+      responseMimeType: 'application/json',
+      thinkingConfig: { thinkingBudget: 0 }
     }
   };
 
@@ -205,7 +217,9 @@ Responde ÚNICAMENTE en formato JSON con la siguiente estructura (sin markdown a
     ],
     generationConfig: {
       temperature: 0.7,
-      responseMimeType: 'application/json'
+      maxOutputTokens: 1500,
+      responseMimeType: 'application/json',
+      thinkingConfig: { thinkingBudget: 0 }
     }
   };
 
