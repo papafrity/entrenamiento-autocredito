@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquare, Car, Trophy, MessageCircle, Calculator, Zap, BookOpen } from 'lucide-react';
+import { MessageSquare, Car, Trophy, MessageCircle, Calculator, Zap, BookOpen, TrendingUp } from 'lucide-react';
 
 export default function Header({ activeTab, setActiveTab, currentUser, onOpenAuthModal }) {
   const tabs = [
@@ -9,7 +9,8 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
     { id: 'whatsapp', label: 'WhatsApp IA', icon: MessageCircle },
     { id: 'calculator', label: 'Calculadora', icon: Calculator },
     { id: 'flash', label: 'Desafío Flash', icon: Zap },
-    { id: 'guide', label: 'Guía', icon: BookOpen }
+    { id: 'guide', label: 'Guía', icon: BookOpen },
+    { id: 'tips', label: 'Consejos de Venta', icon: TrendingUp }
   ];
 
   return (

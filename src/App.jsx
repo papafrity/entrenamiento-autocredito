@@ -7,6 +7,7 @@ import WhatsappGenerator from './components/WhatsappGenerator';
 import PlanCalculator from './components/PlanCalculator';
 import QuickObjectionsGame from './components/QuickObjectionsGame';
 import ObjectionsGuide from './components/ObjectionsGuide';
+import SalesTips from './components/SalesTips';
 import FeedbackModal from './components/FeedbackModal';
 import AdvisorAuthModal from './components/AdvisorAuthModal';
 import { getCurrentUserProfile, awardPointsToCurrentUser, subscribeToRealtimeUpdates } from './services/storageService';
@@ -94,6 +95,10 @@ export default function App() {
 
         {activeTab === 'guide' && (
           <ObjectionsGuide />
+        )}
+
+        {activeTab === 'tips' && (
+          <SalesTips />
         )}
       </main>
 
