@@ -246,13 +246,25 @@ export default function PlanCalculator() {
                       border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border-color)',
                       cursor: 'pointer',
                       display: 'flex',
-                      justifyContent: 'space-between',
+                      gap: '10px',
                       alignItems: 'center',
                       transition: 'all 0.2s ease'
                     }}
                   >
-                    <div>
-                      <strong style={{ fontSize: '0.86rem', color: isSelected ? 'var(--primary)' : 'var(--text-main)' }}>
+                    {plan.image ? (
+                      <img
+                        src={plan.image}
+                        alt={plan.name}
+                        style={{ width: '48px', height: '48px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div style={{ width: '48px', height: '48px', borderRadius: '6px', background: 'rgba(255,159,28,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>
+                        🚗
+                      </div>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <strong style={{ fontSize: '0.86rem', color: isSelected ? 'var(--primary)' : 'var(--text-main)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {plan.name}
                       </strong>
                       <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
@@ -260,7 +272,7 @@ export default function PlanCalculator() {
                       </p>
                     </div>
 
-                    <div style={{ textAlign: 'right' }}>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-main)' }}>
                         {formatMoney(plan.quote1to7)}
                       </span>
@@ -281,6 +293,16 @@ export default function PlanCalculator() {
               flexDirection: 'column',
               gap: '14px'
             }}>
+              {selectedPlan.image && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+                  <img
+                    src={selectedPlan.image}
+                    alt={selectedPlan.name}
+                    style={{ maxHeight: '200px', maxWidth: '100%', objectFit: 'contain', borderRadius: '8px' }}
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <span className="badge badge-medium" style={{ fontSize: '0.7rem' }}>
