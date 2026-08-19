@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getCarReservations, addCarReservation, deleteCarReservation, getCurrentUserProfile, subscribeToRealtimeUpdates } from '../services/storageService';
-import { Calendar as CalendarIcon, Clock, MapPin, User, AlertTriangle, CheckCircle, Plus, Trash2, Share2, Car, ShieldAlert, ChevronLeft, ChevronRight, List, Grid, CalendarDays, UserPlus } from 'lucide-react';
+import { getCarReservations, addCarReservation, deleteCarReservation, getCurrentUserProfile, subscribeToRealtimeUpdates, syncFromCloud } from '../services/storageService';
+import { Calendar as CalendarIcon, Clock, MapPin, User, AlertTriangle, CheckCircle, Plus, Trash2, Share2, Car, ShieldAlert, ChevronLeft, ChevronRight, List, Grid, CalendarDays, UserPlus, RefreshCw } from 'lucide-react';
 
 export default function CarSchedule({ onOpenAuthModal }) {
   const [reservations, setReservations] = useState([]);
@@ -19,8 +19,11 @@ export default function CarSchedule({ onOpenAuthModal }) {
   const [formEndTime, setFormEndTime] = useState('16:00');
   const [formPurpose, setFormPurpose] = useState('');
 
+  const [isSyncing, setIsSyncing] = useState(false);
+
   useEffect(() => {
     loadReservations();
+    syncFromCloud(); // Sincroniza reservas de inmediato al entrar
     const unsubscribe = subscribeToRealtimeUpdates((event) => {
       if (event.type === 'RESERVATIONS_UPDATED') {
         setReservations(event.payload);
@@ -31,6 +34,18 @@ export default function CarSchedule({ onOpenAuthModal }) {
     });
     return () => unsubscribe();
   }, []);
+
+  const handleSyncCloud = async () => {
+    setIsSyncing(true);
+    try {
+      await syncFromCloud();
+      loadReservations();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const loadReservations = () => {
     setReservations(getCarReservations());
@@ -205,13 +220,26 @@ export default function CarSchedule({ onOpenAuthModal }) {
           </div>
         </div>
 
-        <button 
-          onClick={() => handleOpenReservationModal()}
-          className="btn-primary"
-          style={{ fontSize: '0.88rem', padding: '10px 18px' }}
-        >
-          <Plus size={18} /> Reservar Auto
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button
+            onClick={handleSyncCloud}
+            disabled={isSyncing}
+            className="btn-secondary"
+            style={{ fontSize: '0.82rem', padding: '10px 14px', gap: '6px' }}
+            title="Sincronizar reservas con la nube"
+          >
+            <RefreshCw size={15} className={isSyncing ? 'animate-spin' : ''} />
+            <span>{isSyncing ? 'Sincronizando...' : 'Nube'}</span>
+          </button>
+
+          <button 
+            onClick={() => handleOpenReservationModal()}
+            className="btn-primary"
+            style={{ fontSize: '0.88rem', padding: '10px 18px' }}
+          >
+            <Plus size={18} /> Reservar Auto
+          </button>
+        </div>
       </div>
 
       {/* Success Notification */}

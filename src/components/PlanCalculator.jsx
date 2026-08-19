@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { OFFICIAL_AUTOCREDITO_PLANS, OFFICIAL_PLANS_CATEGORIES } from '../data/officialPlans';
-import { Calculator, CheckCircle2, XCircle, Share2, DollarSign, Award, HelpCircle, FileText, Sparkles, Send, Download, Search, Filter } from 'lucide-react';
+import { Calculator, CheckCircle2, XCircle, Share2, DollarSign, Award, HelpCircle, FileText, Sparkles, Send, Download, Search, Filter, Image } from 'lucide-react';
+import VisualCardModal from './VisualCardModal';
 
 export default function PlanCalculator() {
   const [activeMode, setActiveMode] = useState('official'); // 'official' o 'custom'
@@ -8,6 +9,7 @@ export default function PlanCalculator() {
   const [selectedBrand, setSelectedBrand] = useState('Todas');
   const [selectedPlanCode, setSelectedPlanCode] = useState('31607'); // Default: Fiat Cronos
   const [searchFilter, setSearchFilter] = useState('');
+  const [isVisualCardOpen, setIsVisualCardOpen] = useState(false);
 
   // Estado para modo personalizado libre
   const [customCapital, setCustomCapital] = useState(43900000);
@@ -369,14 +371,24 @@ export default function PlanCalculator() {
                 </li>
               </ul>
 
-              {/* Send Quote via WhatsApp Button */}
-              <button
-                onClick={() => handleShareOfficialQuote(selectedPlan)}
-                className="btn-primary"
-                style={{ padding: '14px', fontSize: '0.92rem', gap: '8px', background: '#25D366', color: '#fff', boxShadow: '0 4px 15px rgba(37, 211, 102, 0.4)' }}
-              >
-                <Send size={18} /> Mandar Cotización Oficial a WhatsApp
-              </button>
+              {/* Action Buttons: WhatsApp & Visual Image Card */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button
+                  onClick={() => setIsVisualCardOpen(true)}
+                  className="btn-primary"
+                  style={{ padding: '13px', fontSize: '0.9rem', gap: '8px', background: 'linear-gradient(135deg, var(--primary) 0%, #f77f00 100%)', color: '#000' }}
+                >
+                  <Image size={18} /> 🖼️ Generar Placa de Imagen para WhatsApp
+                </button>
+
+                <button
+                  onClick={() => handleShareOfficialQuote(selectedPlan)}
+                  className="btn-primary"
+                  style={{ padding: '13px', fontSize: '0.9rem', gap: '8px', background: '#25D366', color: '#fff', boxShadow: '0 4px 15px rgba(37, 211, 102, 0.4)' }}
+                >
+                  <Send size={18} /> Mandar Cotización en Texto a WhatsApp
+                </button>
+              </div>
 
             </div>
 
@@ -384,6 +396,13 @@ export default function PlanCalculator() {
 
         </div>
       )}
+
+      {/* Modal para generar y descargar imagen de la cotización */}
+      <VisualCardModal
+        isOpen={isVisualCardOpen}
+        onClose={() => setIsVisualCardOpen(false)}
+        plan={selectedPlan}
+      />
 
       {/* MODO 2: COMPARADOR LIBRE CON BANCO Y CONCESIONARIA */}
       {activeMode === 'custom' && (

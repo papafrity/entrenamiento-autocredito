@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { getTeamMembers, registerNewAdvisor, setActiveAdvisorId, getCurrentUserProfile, getActiveAdvisorId } from '../services/storageService';
+import { getTeamMembers, registerNewAdvisor, setActiveAdvisorId, getCurrentUserProfile, getActiveAdvisorId, syncFromCloud } from '../services/storageService';
 import { PROVINCIAS_LIST, getAgenciasByProvincia } from '../data/agenciasData';
-import { UserPlus, Users, Check, X, Sparkles, Lock, ShieldCheck, ChevronDown } from 'lucide-react';
+import { UserPlus, Users, Check, X, Sparkles, Lock, ShieldCheck, ChevronDown, RefreshCw, Cloud } from 'lucide-react';
 
 export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) {
   const [team, setTeam] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [hasRegisteredDevice, setHasRegisteredDevice] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const [activeTab, setActiveTab] = useState('select');
   const [newName, setNewName] = useState('');
@@ -20,21 +21,32 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
 
   const agenciasDisponibles = newProvincia ? getAgenciasByProvincia(newProvincia) : [];
 
+  const refreshData = async (forceCloud = false) => {
+    if (forceCloud) {
+      setIsSyncing(true);
+      try {
+        await syncFromCloud();
+      } catch (err) {
+        console.error('Error syncing:', err);
+      } finally {
+        setIsSyncing(false);
+      }
+    }
+    const freshTeam = getTeamMembers();
+    const freshUser = getCurrentUserProfile();
+    const activeId = getActiveAdvisorId();
+
+    setTeam(freshTeam);
+    setCurrentUser(freshUser);
+
+    const deviceRegistered = Boolean(activeId && freshTeam.find(m => m.id === activeId));
+    setHasRegisteredDevice(deviceRegistered);
+    setActiveTab(freshTeam.length === 0 ? 'register' : 'select');
+  };
+
   useEffect(() => {
     if (isOpen) {
-      const freshTeam = getTeamMembers();
-      const freshUser = getCurrentUserProfile();
-      const activeId = getActiveAdvisorId();
-
-      setTeam(freshTeam);
-      setCurrentUser(freshUser);
-
-      const deviceRegistered = Boolean(activeId && freshTeam.find(m => m.id === activeId));
-      setHasRegisteredDevice(deviceRegistered);
-
-      setActiveTab(freshTeam.length === 0 ? 'register' : 'select');
-
-      // Resetear form
+      refreshData(true); // Sincroniza con la nube al abrir
       setNewName('');
       setNewProvincia('');
       setNewAgencia('');
@@ -44,7 +56,6 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
     }
   }, [isOpen]);
 
-  // Limpiar agencia cuando cambia la provincia
   useEffect(() => {
     setNewAgencia('');
   }, [newProvincia]);
@@ -53,7 +64,7 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
 
   const handleSelectAdvisor = (id) => {
     setActiveAdvisorId(id);
-    onAdvisorChanged();
+    onAdvisorChanged?.();
     onClose();
   };
 
@@ -82,7 +93,7 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
         phone: newPhone,
         avatar: newAvatar
       });
-      onAdvisorChanged();
+      onAdvisorChanged?.();
       onClose();
     } catch (err) {
       console.error(err);
@@ -125,18 +136,33 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
         </button>
 
         {/* Title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-          <div style={{ background: 'rgba(255, 159, 28, 0.15)', padding: '10px', borderRadius: '12px', flexShrink: 0 }}>
-            <Users size={22} color="var(--primary)" />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', paddingRight: '28px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ background: 'rgba(255, 159, 28, 0.15)', padding: '10px', borderRadius: '12px', flexShrink: 0 }}>
+              <Users size={22} color="var(--primary)" />
+            </div>
+            <div>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Perfil de Asesor</h3>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                {currentUser
+                  ? `Asesor activo: ${currentUser.name} (${currentUser.branch})`
+                  : 'Sincronizado en tiempo real con todo el equipo'}
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Perfil de Asesor</h3>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              {currentUser
-                ? `Usando la app como: ${currentUser.name} — ${currentUser.branch}`
-                : 'Registrate para comenzar a sumar puntos'}
-            </p>
-          </div>
+
+          {/* Sync Button */}
+          <button
+            type="button"
+            onClick={() => refreshData(true)}
+            disabled={isSyncing}
+            className="btn-secondary"
+            style={{ fontSize: '0.72rem', padding: '6px 10px', gap: '4px' }}
+            title="Sincronizar asesores desde la nube"
+          >
+            <RefreshCw size={13} className={isSyncing ? 'animate-spin' : ''} />
+            <span className="mobile-hide">{isSyncing ? 'Sincronizando...' : 'Nube'}</span>
+          </button>
         </div>
 
         {/* Tab Switcher */}
@@ -145,8 +171,7 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
             type="button"
             className={activeTab === 'select' ? 'btn-primary' : 'btn-secondary'}
             onClick={() => setActiveTab('select')}
-            disabled={team.length === 0}
-            style={{ flex: 1, fontSize: '0.82rem', padding: '8px', opacity: team.length === 0 ? 0.4 : 1 }}
+            style={{ flex: 1, fontSize: '0.82rem', padding: '8px' }}
           >
             <Users size={14} /> Seleccionar ({team.length})
           </button>
@@ -173,15 +198,27 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '360px', overflowY: 'auto' }}>
             {team.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
-                <p>Aún no hay asesores registrados.</p>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('register')}
-                  className="btn-primary"
-                  style={{ marginTop: '12px', fontSize: '0.82rem', padding: '8px 16px' }}
-                >
-                  Registrar mi Asesor
-                </button>
+                <Cloud size={32} style={{ margin: '0 auto 10px auto', opacity: 0.5, display: 'block' }} />
+                <p style={{ fontSize: '0.88rem', fontWeight: 600 }}>No hay asesores cargados en este momento.</p>
+                <p style={{ fontSize: '0.78rem', marginTop: '4px' }}>Si creaste tu asesor en otro dispositivo, tocá "Actualizar Nube".</p>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '14px' }}>
+                  <button
+                    type="button"
+                    onClick={() => refreshData(true)}
+                    className="btn-secondary"
+                    style={{ fontSize: '0.8rem', padding: '8px 14px' }}
+                  >
+                    <RefreshCw size={14} /> Actualizar Nube
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('register')}
+                    className="btn-primary"
+                    style={{ fontSize: '0.8rem', padding: '8px 14px' }}
+                  >
+                    Registrar Asesor
+                  </button>
+                </div>
               </div>
             ) : (
               team.map(member => {
@@ -213,7 +250,7 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ fontSize: '0.82rem', color: 'var(--primary)', fontWeight: 700 }}>
-                        {member.points} pts
+                        {member.points || 0} pts
                       </span>
                       {isSelected && <Check size={18} color="var(--accent-green)" />}
                     </div>
@@ -231,8 +268,8 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
               <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🔒</div>
               <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '8px' }}>Ya tenés un perfil en este dispositivo</h4>
               <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                Para evitar duplicados, cada dispositivo solo puede tener un asesor registrado.<br/>
-                Si sos otro asesor, abrí la app desde tu propio celular y registrate ahí.
+                Para evitar duplicados, cada celular o PC tiene su asesor asignado.<br/>
+                Si querés usar el perfil que creaste en la PC, seleccionalo en la pestaña <strong>"Seleccionar"</strong>.
               </p>
               <div style={{ marginTop: '16px', padding: '10px 14px', background: 'rgba(255,159,28,0.1)', border: '1px solid rgba(255,159,28,0.25)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                 <ShieldCheck size={16} color="var(--primary)" />
@@ -245,7 +282,7 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
                 className="btn-secondary"
                 style={{ marginTop: '14px', fontSize: '0.82rem', padding: '8px 20px' }}
               >
-                Ver lista de asesores
+                Ver lista de asesores ({team.length})
               </button>
             </div>
           ) : (
@@ -305,9 +342,6 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
                     </select>
                     <ChevronDown size={16} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)' }} />
                   </div>
-                  <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '4px' }}>
-                    ¿No encontrás tu agencia? Avisale al administrador para agregarla.
-                  </p>
                 </div>
               )}
 

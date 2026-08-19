@@ -230,3 +230,65 @@ Responde ÚNICAMENTE en formato JSON con la siguiente estructura (sin markdown a
   }
   return JSON.parse(textResponse);
 }
+
+/**
+ * Evalúa el pitch de 60 segundos del vendedor
+ */
+export async function evaluatePitchSession({ challengeTitle, pitchText, durationSeconds }) {
+  const prompt = `
+Actúa como un Director de Capacitación y Ventas Senior de AutoCrédito en Argentina.
+Evalúa el siguiente PITCH DE VENTAS DE 60 SEGUNDOS grabado/presentado por un asesor comercial.
+
+DESAFÍO / TEMA DEL PITCH:
+"${challengeTitle}"
+
+TEXTO DEL PITCH PRESENTADO POR EL ASESOR:
+"""
+${pitchText.trim()}
+"""
+
+TIEMPO EMPLEADO: ${durationSeconds} segundos (Límite: 60 segundos).
+
+CRITERIOS DE EVALUACIÓN:
+1. Claridad y Estructura: ¿Fue directo, sin titubeos, y enganchó desde los primeros 10 segundos?
+2. Argumentos de AutoCrédito: ¿Mencionó la ventaja clave (adjudicación por sorteo sin pagar más cuotas, cuota accesible, capitalización vs banco)?
+3. Llamado a la Acción / Cierre: ¿Terminó con una pregunta de avance clara hacia el cliente?
+4. Manejo del Tiempo: Si tardó menos de 20s fue muy corto; si pasó los 60s fue largo.
+
+Responde ÚNICAMENTE en formato JSON con la siguiente estructura (sin markdown adicional):
+{
+  "score": 88,
+  "verdict": "¡Excelente Pitch! / Buen intento / Requiere práctica",
+  "summary": "Resumen en 2 oraciones del impacto del pitch.",
+  "clarityScore": 90,
+  "persuasionScore": 85,
+  "closingScore": 80,
+  "strengths": ["Punto fuerte 1", "Punto fuerte 2"],
+  "improvements": ["Qué le faltó mencionar o cómo mejorar el cierre"],
+  "improvedPitchExample": "Un ejemplo pulido y perfecto de cómo decir este mismo pitch en 50 segundos con modismos argentinos profesionales."
+}
+`;
+
+  const payload = {
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: prompt }]
+      }
+    ],
+    generationConfig: {
+      temperature: 0.3,
+      maxOutputTokens: 1500,
+      responseMimeType: 'application/json',
+      thinkingConfig: { thinkingBudget: 0 }
+    }
+  };
+
+  const textResponse = await callGeminiApi(payload);
+  const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    return JSON.parse(jsonMatch[0]);
+  }
+  return JSON.parse(textResponse);
+}
+

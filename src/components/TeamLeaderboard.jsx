@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getTeamMembers, getCurrentUserProfile, updateCurrentUserProfile, subscribeToRealtimeUpdates } from '../services/storageService';
+import { getTeamMembers, getCurrentUserProfile, updateCurrentUserProfile, subscribeToRealtimeUpdates, syncFromCloud } from '../services/storageService';
 import { BADGES_CATALOG } from '../data/teamData';
-import { Trophy, Award, Medal, Users, Edit3, Check, Star, ShieldCheck, UserPlus } from 'lucide-react';
+import { Trophy, Award, Medal, Users, Edit3, Check, Star, ShieldCheck, UserPlus, RefreshCw } from 'lucide-react';
 
 export default function TeamLeaderboard({ onOpenAuthModal }) {
   const [team, setTeam] = useState(getTeamMembers());
@@ -11,10 +11,13 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
   const [editBranch, setEditBranch] = useState('');
   const [editAvatar, setEditAvatar] = useState('👨‍💼');
 
+  const [isSyncing, setIsSyncing] = useState(false);
+
   const avatarsList = ['👨‍💼', '👩‍💼', '🧑‍💻', '👨‍🔧', '👩‍💻', '🤵', '🦸‍♂️', '🏎️'];
 
   useEffect(() => {
     loadData();
+    syncFromCloud(); // Sincroniza al entrar
     const unsubscribe = subscribeToRealtimeUpdates((event) => {
       if (event.type === 'TEAM_UPDATED') {
         setTeam(event.payload);
@@ -22,6 +25,18 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
     });
     return () => unsubscribe();
   }, []);
+
+  const handleSyncCloud = async () => {
+    setIsSyncing(true);
+    try {
+      await syncFromCloud();
+      loadData();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const loadData = () => {
     const currentTeam = getTeamMembers();
@@ -83,7 +98,18 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
             </div>
           </div>
 
-          <div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              onClick={handleSyncCloud}
+              disabled={isSyncing}
+              className="btn-secondary"
+              style={{ fontSize: '0.8rem', padding: '8px 12px', gap: '6px' }}
+              title="Sincronizar asesores y puntos desde la nube"
+            >
+              <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
+              <span>{isSyncing ? 'Sincronizando...' : 'Nube'}</span>
+            </button>
+
             {activeUser ? (
               <button
                 onClick={() => setIsEditingProfile(!isEditingProfile)}

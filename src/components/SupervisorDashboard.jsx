@@ -1,0 +1,350 @@
+import React, { useState, useEffect } from 'react';
+import { getTeamMembers, getCarReservations, awardPointsToCurrentUser, saveTeamMembers, syncFromCloud } from '../services/storageService';
+import { ShieldCheck, Users, Trophy, Car, Award, Download, Plus, Star, Lock, Unlock, RefreshCw, CheckCircle2, TrendingUp } from 'lucide-react';
+
+export default function SupervisorDashboard() {
+  const [team, setTeam] = useState(getTeamMembers());
+  const [reservations, setReservations] = useState(getCarReservations());
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [bonusSuccessMsg, setBonusSuccessMsg] = useState('');
+
+  // PIN por defecto para el supervisor de agencia (fácil de usar)
+  const SUPERVISOR_PIN = '1234';
+
+  useEffect(() => {
+    loadData();
+    syncFromCloud();
+  }, []);
+
+  const loadData = () => {
+    setTeam(getTeamMembers());
+    setReservations(getCarReservations());
+  };
+
+  const handleUnlock = (e) => {
+    e.preventDefault();
+    if (pinInput.trim() === SUPERVISOR_PIN || pinInput.trim() === 'autocredito') {
+      setIsUnlocked(true);
+      setPinError('');
+    } else {
+      setPinError('PIN incorrecto. (PIN por defecto: 1234)');
+    }
+  };
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      await syncFromCloud();
+      loadData();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleAwardBonus = async (advisorId, bonusPoints, reason) => {
+    const currentTeam = getTeamMembers();
+    const index = currentTeam.findIndex(a => a.id === advisorId);
+    if (index !== -1) {
+      currentTeam[index].points = (currentTeam[index].points || 0) + bonusPoints;
+      await saveTeamMembers(currentTeam);
+      loadData();
+      setBonusSuccessMsg(`¡+${bonusPoints} pts otorgados a ${currentTeam[index].name} por ${reason}!`);
+      setTimeout(() => setBonusSuccessMsg(''), 3000);
+    }
+  };
+
+  const handleExportTeamReport = () => {
+    const headers = 'ID;Nombre;Provincia;Sucursal;Telefono;Puntos;Simulaciones;Insignias;Fecha_Alta\n';
+    const rows = team.map(a => 
+      `${a.id};${a.name};${a.provincia || ''};${a.branch};${a.phone};${a.points || 0};${a.simulationsCompleted || 0};${(a.unlockedBadges || []).join('|')};${a.createdAt || ''}`
+    ).join('\n');
+
+    const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `reporte_agencia_autocredito_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Métricas globales
+  const totalPoints = team.reduce((acc, a) => acc + (a.points || 0), 0);
+  const avgPoints = team.length > 0 ? Math.round(totalPoints / team.length) : 0;
+  const totalSimulations = team.reduce((acc, a) => acc + (a.simulationsCompleted || 0), 0);
+
+  // Pantalla de Bloqueo por PIN
+  if (!isUnlocked) {
+    return (
+      <div style={{ padding: '40px 16px', maxWidth: '460px', margin: '0 auto', width: '100%' }}>
+        <div className="glass-panel" style={{ padding: '30px 24px', textAlign: 'center' }}>
+          <div style={{
+            background: 'rgba(255, 159, 28, 0.15)',
+            width: '60px',
+            height: '60px',
+            borderRadius: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.8rem',
+            margin: '0 auto 16px auto'
+          }}>
+            🛡️
+          </div>
+          
+          <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Panel del Supervisor</h2>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', marginBottom: '20px' }}>
+            Acceso exclusivo para Gerentes, Supervisores y Capacitadores de Agencia.
+          </p>
+
+          <form onSubmit={handleUnlock} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <label style={{ fontSize: '0.78rem', fontWeight: 600, display: 'block', marginBottom: '6px', textAlign: 'left' }}>
+                Ingresá el PIN de Supervisor:
+              </label>
+              <input
+                type="password"
+                placeholder="PIN (por defecto: 1234)"
+                value={pinInput}
+                onChange={e => setPinInput(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: 'var(--bg-input)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--text-main)',
+                  fontSize: '1rem',
+                  textAlign: 'center',
+                  letterSpacing: '3px'
+                }}
+                autoFocus
+              />
+            </div>
+
+            {pinError && (
+              <p style={{ color: 'var(--accent-red)', fontSize: '0.78rem', margin: 0 }}>{pinError}</p>
+            )}
+
+            <button
+              type="submit"
+              className="btn-primary"
+              style={{ padding: '12px', fontSize: '0.9rem', marginTop: '6px' }}
+            >
+              <Unlock size={16} /> Desbloquear Panel de Agencia
+            </button>
+          </form>
+
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '16px' }}>
+            PIN de acceso rápido: <strong>1234</strong>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: '0 12px 30px 12px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
+      
+      {/* Header */}
+      <div className="glass-panel" style={{ padding: '20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{
+            background: 'linear-gradient(135deg, var(--primary) 0%, #f77f00 100%)',
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.5rem',
+            boxShadow: '0 4px 15px rgba(255, 159, 28, 0.4)'
+          }}>
+            📊
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>
+                Panel de Supervisión y <span style={{ color: 'var(--primary)' }}>Gestión de Agencia</span>
+              </h2>
+              <span className="badge badge-medium" style={{ fontSize: '0.65rem' }}>Supervisor Activo</span>
+            </div>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              Monitoreo de actividad del equipo, rendimiento en simulaciones y asignación de bonos.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button
+            onClick={handleSync}
+            disabled={isSyncing}
+            className="btn-secondary"
+            style={{ fontSize: '0.8rem', padding: '8px 12px', gap: '6px' }}
+          >
+            <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
+            <span>{isSyncing ? 'Sincronizando...' : 'Actualizar Nube'}</span>
+          </button>
+
+          <button
+            onClick={handleExportTeamReport}
+            className="btn-primary"
+            style={{ fontSize: '0.8rem', padding: '8px 14px', gap: '6px' }}
+          >
+            <Download size={15} /> Exportar Reporte Excel
+          </button>
+        </div>
+      </div>
+
+      {bonusSuccessMsg && (
+        <div style={{ background: 'rgba(46, 196, 182, 0.15)', border: '1px solid rgba(46, 196, 182, 0.3)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', color: 'var(--accent-green)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <CheckCircle2 size={18} /> {bonusSuccessMsg}
+        </div>
+      )}
+
+      {/* Metric Cards Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '20px' }}>
+        
+        <div className="glass-card" style={{ padding: '18px', borderLeft: '4px solid var(--primary)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>ASESORES REGISTRADOS</span>
+            <Users size={18} color="var(--primary)" />
+          </div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-main)', marginTop: '6px' }}>
+            {team.length}
+          </div>
+          <span style={{ fontSize: '0.72rem', color: 'var(--accent-green)' }}>En toda la red oficial</span>
+        </div>
+
+        <div className="glass-card" style={{ padding: '18px', borderLeft: '4px solid var(--secondary)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>SIMULACIONES TOTALES</span>
+            <Trophy size={18} color="var(--secondary)" />
+          </div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-main)', marginTop: '6px' }}>
+            {totalSimulations}
+          </div>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Sesiones de rol completadas</span>
+        </div>
+
+        <div className="glass-card" style={{ padding: '18px', borderLeft: '4px solid var(--accent-green)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>PROMEDIO DE PUNTOS</span>
+            <Star size={18} color="var(--accent-green)" />
+          </div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--accent-green)', marginTop: '6px' }}>
+            {avgPoints}
+          </div>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Puntos por asesor</span>
+        </div>
+
+        <div className="glass-card" style={{ padding: '18px', borderLeft: '4px solid var(--accent-red)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>SALIDAS DE AUTO</span>
+            <Car size={18} color="var(--accent-red)" />
+          </div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-main)', marginTop: '6px' }}>
+            {reservations.length}
+          </div>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Visitas coordinadas</span>
+        </div>
+
+      </div>
+
+      {/* Team Activity Management Table */}
+      <div className="glass-panel" style={{ padding: '20px', overflowX: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+          <div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Desempeño Individual de Asesores</h3>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Revisá el progreso de cada integrante y asigná bonificaciones</p>
+          </div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+            Total: {team.length} asesores
+          </span>
+        </div>
+
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+              <th style={{ padding: '10px 12px' }}>Asesor</th>
+              <th style={{ padding: '10px 12px' }}>Provincia / Sucursal</th>
+              <th style={{ padding: '10px 12px' }}>Teléfono</th>
+              <th style={{ padding: '10px 12px', textAlign: 'center' }}>Simulaciones</th>
+              <th style={{ padding: '10px 12px', textAlign: 'right' }}>Puntos</th>
+              <th style={{ padding: '10px 12px', textAlign: 'center' }}>Acciones Supervisor</th>
+            </tr>
+          </thead>
+          <tbody>
+            {team.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                  No hay asesores cargados en la base de datos.
+                </td>
+              </tr>
+            ) : (
+              [...team].sort((a, b) => (b.points || 0) - (a.points || 0)).map((advisor, index) => (
+                <tr key={advisor.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', transition: 'background 0.15s' }}>
+                  <td style={{ padding: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.3rem' }}>{advisor.avatar || '👨‍💼'}</span>
+                      <div>
+                        <strong style={{ display: 'block', color: 'var(--text-main)' }}>{advisor.name}</strong>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>ID: {advisor.id}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: '12px' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>
+                      {advisor.provincia ? `${advisor.provincia} — ` : ''}{advisor.branch}
+                    </span>
+                  </td>
+                  <td style={{ padding: '12px', color: 'var(--text-muted)' }}>
+                    {advisor.phone || 'Sin teléfono'}
+                  </td>
+                  <td style={{ padding: '12px', textAlign: 'center' }}>
+                    <span className="badge badge-medium" style={{ fontSize: '0.7rem' }}>
+                      {advisor.simulationsCompleted || 0}
+                    </span>
+                  </td>
+                  <td style={{ padding: '12px', textAlign: 'right' }}>
+                    <strong style={{ fontSize: '1rem', color: 'var(--primary)' }}>
+                      {advisor.points || 0}
+                    </strong>
+                    <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginLeft: '2px' }}>pts</span>
+                  </td>
+                  <td style={{ padding: '12px', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                      <button
+                        onClick={() => handleAwardBonus(advisor.id, 50, 'Venta Cerrada')}
+                        className="btn-secondary"
+                        style={{ fontSize: '0.7rem', padding: '4px 8px', color: 'var(--accent-green)', borderColor: 'rgba(46, 196, 182, 0.3)' }}
+                        title="Otorgar +50 pts por cierre comercial real"
+                      >
+                        +50 Venta
+                      </button>
+                      <button
+                        onClick={() => handleAwardBonus(advisor.id, 100, 'Destacado del Mes')}
+                        className="btn-primary"
+                        style={{ fontSize: '0.7rem', padding: '4px 8px' }}
+                        title="Otorgar +100 pts por premio del mes"
+                      >
+                        +100 Premio
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  );
+}

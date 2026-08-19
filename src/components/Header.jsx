@@ -1,16 +1,18 @@
 import React from 'react';
-import { MessageSquare, Car, Trophy, MessageCircle, Calculator, Zap, BookOpen, TrendingUp } from 'lucide-react';
+import { MessageSquare, Car, Trophy, MessageCircle, Calculator, Zap, BookOpen, TrendingUp, Flame, ShieldCheck } from 'lucide-react';
 
 export default function Header({ activeTab, setActiveTab, currentUser, onOpenAuthModal }) {
   const tabs = [
     { id: 'chat', label: 'Chat IA', icon: MessageSquare },
+    { id: 'pitch', label: 'Pitch 60s', icon: Flame },
+    { id: 'calculator', label: 'Calculadora & Placas', icon: Calculator },
+    { id: 'whatsapp', label: 'WhatsApp IA', icon: MessageCircle },
     { id: 'car', label: 'Auto & Visitas', icon: Car },
     { id: 'team', label: 'Equipo & Medallas', icon: Trophy },
-    { id: 'whatsapp', label: 'WhatsApp IA', icon: MessageCircle },
-    { id: 'calculator', label: 'Calculadora', icon: Calculator },
     { id: 'flash', label: 'Desafío Flash', icon: Zap },
     { id: 'guide', label: 'Guía', icon: BookOpen },
-    { id: 'tips', label: 'Consejos de Venta', icon: TrendingUp }
+    { id: 'tips', label: 'Consejos de Venta', icon: TrendingUp },
+    { id: 'supervisor', label: 'Supervisor', icon: ShieldCheck }
   ];
 
   return (

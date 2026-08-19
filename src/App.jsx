@@ -8,9 +8,12 @@ import PlanCalculator from './components/PlanCalculator';
 import QuickObjectionsGame from './components/QuickObjectionsGame';
 import ObjectionsGuide from './components/ObjectionsGuide';
 import SalesTips from './components/SalesTips';
+import PaymentSeasonTimer from './components/PaymentSeasonTimer';
+import ElevatorPitch from './components/ElevatorPitch';
+import SupervisorDashboard from './components/SupervisorDashboard';
 import FeedbackModal from './components/FeedbackModal';
 import AdvisorAuthModal from './components/AdvisorAuthModal';
-import { getCurrentUserProfile, awardPointsToCurrentUser, subscribeToRealtimeUpdates } from './services/storageService';
+import { getCurrentUserProfile, awardPointsToCurrentUser, subscribeToRealtimeUpdates, syncFromCloud } from './services/storageService';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('chat');
@@ -22,6 +25,7 @@ export default function App() {
 
   useEffect(() => {
     loadCurrentUser();
+    syncFromCloud(); // Sincroniza asesores y reservas automáticamente al iniciar
 
     const unsubscribe = subscribeToRealtimeUpdates((event) => {
       if (event.type === 'USER_SWITCHED' || event.type === 'TEAM_UPDATED') {
@@ -61,11 +65,20 @@ export default function App() {
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
       />
 
+      {/* Widget de Temporada y Cierre de Pagos / Sorteo */}
+      <PaymentSeasonTimer />
+
       {/* Main View Area */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         {activeTab === 'chat' && (
           <RoleplayChat 
             onShowFeedback={handleShowFeedback}
+          />
+        )}
+
+        {activeTab === 'pitch' && (
+          <ElevatorPitch 
+            onPointsAwarded={loadCurrentUser}
           />
         )}
 
@@ -99,6 +112,10 @@ export default function App() {
 
         {activeTab === 'tips' && (
           <SalesTips />
+        )}
+
+        {activeTab === 'supervisor' && (
+          <SupervisorDashboard />
         )}
       </main>
 
