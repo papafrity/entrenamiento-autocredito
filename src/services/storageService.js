@@ -184,15 +184,22 @@ export function getCurrentUserProfile() {
 
 /**
  * Registra un nuevo asesor y lo sube inmediatamente a Firestore
+ * Con validación anti-duplicado y debounce implícito
  */
 export async function registerNewAdvisor({ name, provincia, branch, phone, avatar, role }) {
   const team = getTeamMembers();
-  const newId = 'adv_' + Date.now();
+  const cleanName = name.trim();
+  // Anti-duplicado: mismo nombre + sucursal
+  const duplicate = team.find(m => m.name.toLowerCase() === cleanName.toLowerCase() && m.branch.toLowerCase() === (branch || '').trim().toLowerCase());
+  if (duplicate) {
+    throw new Error('Ya existe un asesor con ese nombre en esa sucursal.');
+  }
+  const newId = 'adv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
   
   const newAdvisor = {
     id: newId,
-    name: name.trim(),
-    role: role || 'PAI', // 'PAI' (Asesor) o 'PAOI' (Supervisor / Organizador)
+    name: cleanName,
+    role: role || 'PAI',
     provincia: provincia?.trim() || '',
     branch: branch?.trim() || 'Sucursal Central',
     phone: phone?.trim() || 'Sin teléfono',
@@ -232,6 +239,51 @@ export async function updateCurrentUserProfile(profile) {
     team[index] = { ...team[index], ...profile };
     await saveTeamMembers(team);
   }
+}
+
+/**
+ * Actualiza cualquier asesor por ID (para PAOI o edición)
+ */
+export async function updateAdvisorById(id, patch) {
+  const team = getTeamMembers();
+  const idx = team.findIndex(t => t.id === id);
+  if (idx === -1) throw new Error('Asesor no encontrado');
+  team[idx] = { ...team[idx], ...patch };
+  await saveTeamMembers(team);
+  if (isFirebaseActive()) {
+    try {
+      await setDoc(doc(db, 'advisors', id), team[idx]);
+    } catch (err) {
+      console.error('Error update advisor:', err);
+    }
+  }
+  return team[idx];
+}
+
+/**
+ * Elimina un asesor por ID (requiere PAOI o dueño)
+ */
+export async function deleteAdvisor(id) {
+  const team = getTeamMembers();
+  const existing = team.find(t => t.id === id);
+  if (!existing) throw new Error('Asesor no encontrado');
+  const filtered = team.filter(t => t.id !== id);
+  localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(filtered));
+  broadcastChannel?.postMessage({ type: 'TEAM_UPDATED', payload: filtered });
+  notifyAllListeners({ type: 'TEAM_UPDATED', payload: filtered });
+  // Si era el activo, limpiar o pasar al siguiente
+  if (getActiveAdvisorId() === id) {
+    if (filtered.length > 0) setActiveAdvisorId(filtered[0].id);
+    else setActiveAdvisorId(null);
+  }
+  if (isFirebaseActive()) {
+    try {
+      await deleteDoc(doc(db, 'advisors', id));
+    } catch (err) {
+      console.error('Error delete advisor:', err);
+    }
+  }
+  return filtered;
 }
 
 /**

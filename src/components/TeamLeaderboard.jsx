@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getTeamMembers, getCurrentUserProfile, updateCurrentUserProfile, subscribeToRealtimeUpdates, syncFromCloud } from '../services/storageService';
+import { getTeamMembers, getCurrentUserProfile, updateCurrentUserProfile, updateAdvisorById, deleteAdvisor, subscribeToRealtimeUpdates, syncFromCloud } from '../services/storageService';
 import { BADGES_CATALOG } from '../data/teamData';
-import { Trophy, Award, Medal, Users, Edit3, Check, Star, ShieldCheck, UserPlus, RefreshCw } from 'lucide-react';
+import { Trophy, Award, Medal, Users, Edit3, Check, Star, ShieldCheck, UserPlus, RefreshCw, Trash2, Pencil } from 'lucide-react';
 
 export default function TeamLeaderboard({ onOpenAuthModal }) {
   const [team, setTeam] = useState(getTeamMembers());
@@ -13,6 +13,8 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
   const [editAvatar, setEditAvatar] = useState('👨‍💼');
 
   const [isSyncing, setIsSyncing] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editRow, setEditRow] = useState({ name: '', branch: '', role: 'PAI', avatar: '👨‍💼' });
 
   const avatarsList = ['👨‍💼', '👩‍💼', '🧑‍💻', '👨‍🔧', '👩‍💻', '🤵', '🦸‍♂️', '🏎️'];
 
@@ -65,6 +67,22 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
     await updateCurrentUserProfile(updated);
     setUserProfile(updated);
     setIsEditingProfile(false);
+    loadData();
+  };
+
+  const handleDeleteRow = async (id, name) => {
+    if (!confirm(`¿Borrar a "${name}"?`)) return;
+    await deleteAdvisor(id);
+    loadData();
+  };
+  const handleEditRow = (m) => {
+    setEditingId(m.id);
+    setEditRow({ name: m.name, branch: m.branch, role: m.role || 'PAI', avatar: m.avatar });
+  };
+  const handleSaveRow = async (id) => {
+    if (!editRow.name.trim()) return;
+    await updateAdvisorById(id, { name: editRow.name.trim(), branch: editRow.branch.trim() || 'Sucursal Central', role: editRow.role, avatar: editRow.avatar });
+    setEditingId(null);
     loadData();
   };
 
@@ -237,7 +255,31 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
                 const isSecond = index === 1;
                 const isThird = index === 2;
                 const isCurrent = activeUser && member.id === activeUser.id;
-
+                const canManage = activeUser && (activeUser.role === 'PAOI' || member.id === activeUser.id);
+                const isRowEditing = editingId === member.id;
+                if (isRowEditing) {
+                  return (
+                    <div key={member.id} style={{ padding: '12px', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--primary)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <input value={editRow.name} onChange={e=>setEditRow({...editRow,name:e.target.value})} placeholder="Nombre" style={{ padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.85rem' }} />
+                      <div style={{ display:'flex', gap:'6px' }}>
+                        <input value={editRow.branch} onChange={e=>setEditRow({...editRow,branch:e.target.value})} placeholder="Sucursal" style={{ flex:1, padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.8rem' }} />
+                        <select value={editRow.role} onChange={e=>setEditRow({...editRow,role:e.target.value})} style={{ padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.8rem' }}>
+                          <option value="PAI">PAI</option>
+                          <option value="PAOI">PAOI</option>
+                        </select>
+                      </div>
+                      <div style={{ display:'flex', gap:'6px', flexWrap:'wrap' }}>
+                        {avatarsList.map(av=>(
+                          <button key={av} type="button" onClick={()=>setEditRow({...editRow,avatar:av})} style={{ background: editRow.avatar===av?'var(--primary)':'rgba(255,255,255,0.08)', border:'none', borderRadius:'6px', padding:'4px 6px', cursor:'pointer' }}>{av}</button>
+                        ))}
+                      </div>
+                      <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
+                        <button type="button" onClick={()=>setEditingId(null)} className="btn-secondary" style={{ fontSize:'0.78rem', padding:'6px 12px' }}>Cancelar</button>
+                        <button type="button" onClick={()=>handleSaveRow(member.id)} className="btn-primary" style={{ fontSize:'0.78rem', padding:'6px 12px' }}><Check size={14}/> Guardar</button>
+                      </div>
+                    </div>
+                  );
+                }
                 return (
                   <div
                     key={member.id}
@@ -248,10 +290,11 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
                       border: isCurrent ? '1px solid var(--primary)' : '1px solid var(--border-color)',
                       display: 'flex',
                       justifyContent: 'space-between',
-                      alignItems: 'center'
+                      alignItems: 'center',
+                      gap:'8px'
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex:1, minWidth:0 }}>
                       <div style={{
                         width: '28px',
                         height: '28px',
@@ -262,15 +305,16 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '0.85rem'
+                        fontSize: '0.85rem',
+                        flexShrink:0
                       }}>
                         {index + 1}
                       </div>
 
                       <span style={{ fontSize: '1.4rem' }}>{member.avatar}</span>
 
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ minWidth:0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap:'wrap' }}>
                           <span style={{ fontWeight: 700, fontSize: '0.92rem' }}>
                             {member.name}
                           </span>
@@ -292,9 +336,17 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
                       </div>
                     </div>
 
-                    <div style={{ textAlign: 'right' }}>
-                      <strong style={{ fontSize: '1.05rem', color: 'var(--primary)' }}>{member.points}</strong>
-                      <p style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>pts</p>
+                    <div style={{ display:'flex', alignItems:'center', gap:'6px', flexShrink:0 }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <strong style={{ fontSize: '1.05rem', color: 'var(--primary)' }}>{member.points}</strong>
+                        <p style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>pts</p>
+                      </div>
+                      {canManage && (
+                        <button type="button" onClick={()=>handleEditRow(member)} title="Editar" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid var(--border-color)', borderRadius:'6px', padding:'5px', cursor:'pointer', color:'var(--text-muted)' }}><Pencil size={12}/></button>
+                      )}
+                      {canManage && team.length>1 && (
+                        <button type="button" onClick={()=>handleDeleteRow(member.id, member.name)} title="Borrar" style={{ background:'rgba(230,57,70,0.12)', border:'1px solid rgba(230,57,70,0.3)', borderRadius:'6px', padding:'5px', cursor:'pointer', color:'var(--accent-red)' }}><Trash2 size={12}/></button>
+                      )}
                     </div>
                   </div>
                 );

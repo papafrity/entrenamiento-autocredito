@@ -2,22 +2,21 @@ import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import RoleplayChat from './components/RoleplayChat';
 import CarSchedule from './components/CarSchedule';
-import TeamLeaderboard from './components/TeamLeaderboard';
 import WhatsappGenerator from './components/WhatsappGenerator';
 import PlanCalculator from './components/PlanCalculator';
-import QuickObjectionsGame from './components/QuickObjectionsGame';
-import ObjectionsGuide from './components/ObjectionsGuide';
-import SalesTips from './components/SalesTips';
 import PaymentSeasonTimer from './components/PaymentSeasonTimer';
-import ElevatorPitch from './components/ElevatorPitch';
 import CommissionCalculator from './components/CommissionCalculator';
 import SupervisorDashboard from './components/SupervisorDashboard';
 import FeedbackModal from './components/FeedbackModal';
 import AdvisorAuthModal from './components/AdvisorAuthModal';
+import KnowledgeHub from './components/KnowledgeHub';
+import ActivitiesHub from './components/ActivitiesHub';
+import SettingsPanel from './components/SettingsPanel';
+import InstallPwaButton from './components/InstallPwaButton';
 import { getCurrentUserProfile, awardPointsToCurrentUser, subscribeToRealtimeUpdates, syncFromCloud } from './services/storageService';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('chat');
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('autocredito_active_tab') || 'calculator');
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(getCurrentUserProfile());
@@ -26,7 +25,7 @@ export default function App() {
 
   useEffect(() => {
     loadCurrentUser();
-    syncFromCloud(); // Sincroniza asesores y reservas automáticamente al iniciar
+    syncFromCloud();
 
     const unsubscribe = subscribeToRealtimeUpdates((event) => {
       if (event.type === 'USER_SWITCHED' || event.type === 'TEAM_UPDATED') {
@@ -34,6 +33,16 @@ export default function App() {
       }
     });
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('autocredito_active_tab', activeTab);
+  }, [activeTab]);
+
+  // Migrar tabs legacy a nuevos IDs
+  useEffect(() => {
+    const legacyMap = { pitch: 'activities', flash: 'activities', team: 'activities', guide: 'knowledge', tips: 'knowledge' };
+    if (legacyMap[activeTab]) setActiveTab(legacyMap[activeTab]);
   }, []);
 
   const loadCurrentUser = () => {
@@ -69,59 +78,20 @@ export default function App() {
       {/* Widget de Temporada y Cierre de Pagos / Sorteo */}
       <PaymentSeasonTimer />
 
+      {/* Banner instalar app */}
+      <InstallPwaButton />
+
       {/* Main View Area */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {activeTab === 'chat' && (
-          <RoleplayChat 
-            onShowFeedback={handleShowFeedback}
-          />
-        )}
-
-        {activeTab === 'pitch' && (
-          <ElevatorPitch 
-            onPointsAwarded={loadCurrentUser}
-          />
-        )}
-
-        {activeTab === 'car' && (
-          <CarSchedule 
-            onOpenAuthModal={() => setIsAuthModalOpen(true)}
-          />
-        )}
-
-        {activeTab === 'team' && (
-          <TeamLeaderboard 
-            onOpenAuthModal={() => setIsAuthModalOpen(true)}
-          />
-        )}
-
-        {activeTab === 'whatsapp' && (
-          <WhatsappGenerator />
-        )}
-
-        {activeTab === 'calculator' && (
-          <PlanCalculator />
-        )}
-
-        {activeTab === 'commissions' && (
-          <CommissionCalculator />
-        )}
-
-        {activeTab === 'flash' && (
-          <QuickObjectionsGame />
-        )}
-
-        {activeTab === 'guide' && (
-          <ObjectionsGuide />
-        )}
-
-        {activeTab === 'tips' && (
-          <SalesTips />
-        )}
-
-        {activeTab === 'supervisor' && (
-          <SupervisorDashboard />
-        )}
+        {activeTab === 'calculator' && <PlanCalculator />}
+        {activeTab === 'knowledge' && <KnowledgeHub />}
+        {activeTab === 'car' && <CarSchedule onOpenAuthModal={() => setIsAuthModalOpen(true)} />}
+        {activeTab === 'whatsapp' && <WhatsappGenerator />}
+        {activeTab === 'chat' && <RoleplayChat onShowFeedback={handleShowFeedback} />}
+        {activeTab === 'activities' && <ActivitiesHub onPointsAwarded={loadCurrentUser} onOpenAuthModal={() => setIsAuthModalOpen(true)} />}
+        {activeTab === 'commissions' && <CommissionCalculator />}
+        {activeTab === 'supervisor' && <SupervisorDashboard />}
+        {activeTab === 'settings' && <SettingsPanel />}
       </main>
 
       {/* Modals */}

@@ -1,19 +1,18 @@
 import React from 'react';
-import { MessageSquare, Car, Trophy, MessageCircle, Calculator, Zap, BookOpen, TrendingUp, Flame, ShieldCheck, DollarSign } from 'lucide-react';
+import { MessageSquare, Car, MessageCircle, Calculator, BookOpen, ShieldCheck, DollarSign, Trophy, Settings } from 'lucide-react';
+import ThemeSelector from './ThemeSelector';
 
 export default function Header({ activeTab, setActiveTab, currentUser, onOpenAuthModal }) {
   const tabs = [
-    { id: 'chat', label: 'Chat IA', icon: MessageSquare },
-    { id: 'pitch', label: 'Pitch 60s', icon: Flame },
-    { id: 'calculator', label: 'Calculadora & Placas', icon: Calculator },
-    { id: 'commissions', label: 'Mis Ganancias', icon: DollarSign },
-    { id: 'whatsapp', label: 'WhatsApp IA', icon: MessageCircle },
+    { id: 'calculator', label: 'Calculadora y Placas', icon: Calculator },
+    { id: 'knowledge', label: 'Guia y Consejos', icon: BookOpen },
     { id: 'car', label: 'Auto & Visitas', icon: Car },
-    { id: 'team', label: 'Equipo & Medallas', icon: Trophy },
-    { id: 'flash', label: 'Desafío Flash', icon: Zap },
-    { id: 'guide', label: 'Guía', icon: BookOpen },
-    { id: 'tips', label: 'Consejos de Venta', icon: TrendingUp },
-    { id: 'supervisor', label: 'Supervisor', icon: ShieldCheck }
+    { id: 'whatsapp', label: 'WhatsApp IA', icon: MessageCircle },
+    { id: 'chat', label: 'Chat IA', icon: MessageSquare },
+    { id: 'activities', label: 'Entrenamiento y Equipo', icon: Trophy },
+    { id: 'commissions', label: 'Mis Ganancias', icon: DollarSign },
+    { id: 'supervisor', label: 'Supervisor', icon: ShieldCheck },
+    { id: 'settings', label: 'Ajustes', icon: Settings },
   ];
 
   return (
@@ -45,10 +44,13 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
           </div>
         </div>
 
-        {/* Right Actions: User Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Right Actions: User Switcher + Theme */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           
-          {/* Active Advisor Profile Button */}
+          <div className="mobile-hide">
+            <ThemeSelector compact />
+          </div>
+
           <button
             onClick={onOpenAuthModal}
             className="btn-secondary"

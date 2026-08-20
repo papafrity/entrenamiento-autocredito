@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { getTeamMembers, registerNewAdvisor, setActiveAdvisorId, getCurrentUserProfile, getActiveAdvisorId, syncFromCloud } from '../services/storageService';
 import { PROVINCIAS_LIST, getAgenciasByProvincia } from '../data/agenciasData';
-import { UserPlus, Users, Check, X, Sparkles, Lock, ShieldCheck, ChevronDown, RefreshCw, Cloud } from 'lucide-react';
+import { UserPlus, Users, Check, X, Sparkles, Lock, ShieldCheck, ChevronDown, RefreshCw, Cloud, Trash2, Pencil } from 'lucide-react';
+import { updateAdvisorById, deleteAdvisor } from '../services/storageService';
 
 export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) {
   const [team, setTeam] = useState([]);
@@ -17,6 +18,10 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
   const [newPhone, setNewPhone] = useState('');
   const [newAvatar, setNewAvatar] = useState('👨‍💼');
   const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ name: '', provincia: '', branch: '', phone: '', avatar: '👨‍💼', role: 'PAI' });
 
   const avatars = ['👨‍💼', '👩‍💼', '🧑‍💻', '👨‍🔧', '👩‍💻', '🤵', '🦸‍♂️', '🏎️'];
 
@@ -72,7 +77,9 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setErrorMsg('');
+    setSuccessMsg('');
 
     if (!newName.trim()) {
       setErrorMsg('Por favor ingresá tu nombre y apellido.');
@@ -87,6 +94,7 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
       return;
     }
 
+    setIsSubmitting(true);
     try {
       await registerNewAdvisor({
         name: newName,
@@ -96,11 +104,45 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
         phone: newPhone,
         avatar: newAvatar
       });
+      setSuccessMsg('¡Perfil creado con éxito! (+100 pts)');
       onAdvisorChanged?.();
-      onClose();
+      setTimeout(() => {
+        setSuccessMsg('');
+        onClose();
+      }, 1200);
     } catch (err) {
       console.error(err);
-      setErrorMsg('Hubo un error al registrar. Intenta de nuevo.');
+      setErrorMsg(err.message || 'Hubo un error al registrar. Intenta de nuevo.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!confirm(`¿Borrar a "${name}"? Esta acción no se puede deshacer.`)) return;
+    try {
+      await deleteAdvisor(id);
+      await refreshData(true);
+      onAdvisorChanged?.();
+    } catch (err) {
+      setErrorMsg(err.message);
+    }
+  };
+
+  const handleStartEdit = (member) => {
+    setEditingId(member.id);
+    setEditForm({ name: member.name, provincia: member.provincia || '', branch: member.branch, phone: member.phone || '', avatar: member.avatar, role: member.role || 'PAI' });
+  };
+
+  const handleSaveEdit = async (id) => {
+    if (!editForm.name.trim()) { setErrorMsg('El nombre no puede estar vacío'); return; }
+    try {
+      await updateAdvisorById(id, { name: editForm.name.trim(), provincia: editForm.provincia, branch: editForm.branch.trim() || 'Sucursal Central', phone: editForm.phone.trim(), avatar: editForm.avatar, role: editForm.role });
+      setEditingId(null);
+      await refreshData(true);
+      onAdvisorChanged?.();
+    } catch (err) {
+      setErrorMsg(err.message);
     }
   };
 
@@ -226,10 +268,38 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
             ) : (
               team.map(member => {
                 const isSelected = currentUser && member.id === currentUser.id;
+                const canEdit = currentUser && (currentUser.role === 'PAOI' || member.id === currentUser.id);
+                const isEditing = editingId === member.id;
+                if (isEditing) {
+                  return (
+                    <div key={member.id} style={{ padding: '12px', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--primary)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <input value={editForm.name} onChange={e=>setEditForm({...editForm,name:e.target.value})} placeholder="Nombre" style={{ padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.85rem' }} />
+                      <div style={{ display:'flex', gap:'6px' }}>
+                        <input value={editForm.provincia} onChange={e=>setEditForm({...editForm,provincia:e.target.value})} placeholder="Provincia" style={{ flex:1, padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.8rem' }} />
+                        <input value={editForm.branch} onChange={e=>setEditForm({...editForm,branch:e.target.value})} placeholder="Sucursal" style={{ flex:1, padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.8rem' }} />
+                      </div>
+                      <div style={{ display:'flex', gap:'6px' }}>
+                        <input value={editForm.phone} onChange={e=>setEditForm({...editForm,phone:e.target.value})} placeholder="Tel" style={{ flex:1, padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.8rem' }} />
+                        <select value={editForm.role} onChange={e=>setEditForm({...editForm,role:e.target.value})} style={{ padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.8rem' }}>
+                          <option value="PAI">PAI</option>
+                          <option value="PAOI">PAOI</option>
+                        </select>
+                      </div>
+                      <div style={{ display:'flex', gap:'6px' }}>
+                        {avatars.map(av=>(
+                          <button key={av} type="button" onClick={()=>setEditForm({...editForm,avatar:av})} style={{ background: editForm.avatar===av?'var(--primary)':'rgba(255,255,255,0.08)', border:'none', borderRadius:'6px', padding:'4px 6px', cursor:'pointer' }}>{av}</button>
+                        ))}
+                      </div>
+                      <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
+                        <button type="button" onClick={()=>setEditingId(null)} className="btn-secondary" style={{ fontSize:'0.78rem', padding:'6px 12px' }}>Cancelar</button>
+                        <button type="button" onClick={()=>handleSaveEdit(member.id)} className="btn-primary" style={{ fontSize:'0.78rem', padding:'6px 12px' }}><Check size={14}/> Guardar</button>
+                      </div>
+                    </div>
+                  );
+                }
                 return (
                   <div
                     key={member.id}
-                    onClick={() => handleSelectAdvisor(member.id)}
                     style={{
                       padding: '12px 14px',
                       borderRadius: 'var(--radius-sm)',
@@ -238,11 +308,10 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      cursor: 'pointer',
                       transition: 'background 0.15s'
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div onClick={() => handleSelectAdvisor(member.id)} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor:'pointer', flex:1 }}>
                       <span style={{ fontSize: '1.4rem' }}>{member.avatar}</span>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -256,7 +325,7 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
                             color: member.role === 'PAOI' ? 'var(--primary)' : 'var(--accent-green)',
                             border: member.role === 'PAOI' ? '1px solid rgba(255, 159, 28, 0.4)' : '1px solid rgba(46, 196, 182, 0.4)'
                           }}>
-                            {member.role === 'PAOI' ? '🛡️ PAOI (Supervisor)' : '👔 PAI (Asesor)'}
+                            {member.role === 'PAOI' ? '🛡️ PAOI' : '👔 PAI'}
                           </span>
                         </div>
                         <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
@@ -264,11 +333,17 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
                         </p>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap:'6px' }}>
                       <span style={{ fontSize: '0.82rem', color: 'var(--primary)', fontWeight: 700 }}>
                         {member.points || 0} pts
                       </span>
-                      {isSelected && <Check size={18} color="var(--accent-green)" />}
+                      {isSelected && <Check size={16} color="var(--accent-green)" />}
+                      {canEdit && (
+                        <button type="button" onClick={()=>handleStartEdit(member)} title="Editar" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid var(--border-color)', borderRadius:'6px', padding:'4px', cursor:'pointer', color:'var(--text-muted)' }}><Pencil size={12}/></button>
+                      )}
+                      {canEdit && team.length > 1 && (
+                        <button type="button" onClick={()=>handleDelete(member.id, member.name)} title="Borrar" style={{ background:'rgba(230,57,70,0.12)', border:'1px solid rgba(230,57,70,0.3)', borderRadius:'6px', padding:'4px', cursor:'pointer', color:'var(--accent-red)' }}><Trash2 size={12}/></button>
+                      )}
                     </div>
                   </div>
                 );
@@ -451,13 +526,17 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
               {errorMsg && (
                 <p style={{ color: 'var(--accent-red)', fontSize: '0.78rem', margin: 0 }}>{errorMsg}</p>
               )}
+              {successMsg && (
+                <p style={{ color: 'var(--accent-green)', fontSize:'0.85rem', fontWeight:700, background:'rgba(46,196,182,0.12)', border:'1px solid rgba(46,196,182,0.3)', padding:'8px 12px', borderRadius:'8px', display:'flex', alignItems:'center', gap:'6px' }}><Check size={14}/> {successMsg}</p>
+              )}
 
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="btn-primary"
-                style={{ padding: '12px', fontSize: '0.9rem', marginTop: '4px' }}
+                style={{ padding: '12px', fontSize: '0.9rem', marginTop: '4px', opacity: isSubmitting?0.6:1 }}
               >
-                <Sparkles size={16} /> Crear Perfil de Asesor (+100 pts de bienvenida)
+                <Sparkles size={16} /> {isSubmitting ? 'Creando...' : 'Crear Perfil de Asesor (+100 pts)'}
               </button>
             </form>
           )
