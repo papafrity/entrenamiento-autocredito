@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { OFFICIAL_AUTOCREDITO_PLANS, OFFICIAL_PLANS_CATEGORIES } from '../data/officialPlans';
 import { Calculator, CheckCircle2, XCircle, Share2, DollarSign, Award, HelpCircle, FileText, Sparkles, Send, Download, Search, Filter, Image } from 'lucide-react';
 import VisualCardModal from './VisualCardModal';
@@ -13,7 +13,6 @@ export default function PlanCalculator() {
 
   // Estado para modo personalizado libre
   const [customCapital, setCustomCapital] = useState(43900000);
-  const [customTerm, setCustomTerm] = useState(300);
 
   const formatMoney = (val) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 2 }).format(val);
@@ -76,8 +75,14 @@ export default function PlanCalculator() {
     document.body.removeChild(link);
   };
 
-  // Cálculos para modo personalizado
-  const monthlyContribution = Math.round(customCapital / customTerm * 1.15);
+  // Cálculos para modo personalizado (basado en ratios reales de los planes oficiales)
+  const QUOTE_RATIO = 0.0033;
+  const MULTIPLIER_1_7 = 1.47917;
+  const SUBSCRIPTION_RATIO = 0.004903;
+
+  const customQuote8 = Math.round(customCapital * QUOTE_RATIO);
+  const customQuote1to7 = Math.round(customQuote8 * MULTIPLIER_1_7);
+  const customSubscription = Math.round(customCapital * SUBSCRIPTION_RATIO);
   const bankMonthlyPayment = Math.round(customCapital / 48 * 1.85);
   const dealershipMonthlyPayment = Math.round(customCapital / 84 * 1.25);
 
@@ -452,23 +457,8 @@ export default function PlanCalculator() {
                 <label style={{ fontSize: '0.88rem', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
                   Plazo de Suscripción:
                 </label>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setCustomTerm(300)}
-                    className={customTerm === 300 ? 'btn-primary' : 'btn-secondary'}
-                    style={{ flex: 1, padding: '10px', fontSize: '0.85rem' }}
-                  >
-                    300 Meses (Plan Estándar)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCustomTerm(120)}
-                    className={customTerm === 120 ? 'btn-primary' : 'btn-secondary'}
-                    style={{ flex: 1, padding: '10px', fontSize: '0.85rem' }}
-                  >
-                    120 Meses (10 Años)
-                  </button>
+                <div style={{ padding: '10px 16px', borderRadius: 'var(--radius-sm)', background: 'rgba(255,159,28,0.1)', border: '1px solid var(--primary)', fontSize: '0.9rem', fontWeight: 700, color: 'var(--primary)', textAlign: 'center' }}>
+                  300 Meses (Plan Estándar AutoCrédito)
                 </div>
               </div>
             </div>
@@ -482,11 +472,28 @@ export default function PlanCalculator() {
               <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)' }}>Plan Capitalización</h3>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '14px' }}>Aporte de ahorro + Sorteo sin deuda</p>
               
-              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '14px', borderRadius: 'var(--radius-sm)', marginBottom: '16px' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Cuota estimada:</span>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                  {formatMoney(monthlyContribution)} <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>/ mes</span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--primary)' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Cuota 1 a 7:</span>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--primary)' }}>
+                    {formatMoney(customQuote1to7)}
+                  </div>
+                  <p style={{ fontSize: '0.62rem', color: 'var(--text-dim)', marginTop: '2px' }}>/ mes</p>
                 </div>
+                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--accent-green)' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Cuota 8+:</span>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--accent-green)' }}>
+                    {formatMoney(customQuote8)}
+                  </div>
+                  <p style={{ fontSize: '0.62rem', color: 'var(--text-dim)', marginTop: '2px' }}>/ mes</p>
+                </div>
+              </div>
+
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: 'var(--radius-sm)', marginBottom: '12px', fontSize: '0.75rem' }}>
+                <span style={{ color: 'var(--text-muted)' }}>📝 Suscripción: </span>
+                <strong style={{ color: 'var(--text-main)' }}>{formatMoney(customSubscription)}</strong>
+                <span style={{ color: 'var(--text-muted)' }}> • Plazo: </span>
+                <strong style={{ color: 'var(--text-main)' }}>300 meses</strong>
               </div>
 
               <p style={{ fontSize: '0.82rem', color: 'var(--accent-green)' }}>
