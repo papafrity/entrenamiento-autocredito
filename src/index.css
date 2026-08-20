@@ -103,7 +103,7 @@
 }
 
 html {
-  overscroll-behavior-y: auto;
+  overscroll-behavior-y: contain;
 }
 
 body {
@@ -117,8 +117,7 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
-  /* TEMPORAL: overscroll liberado para permitir pull-to-refresh mientras se corrige pantalla negra de medallas */
-  overscroll-behavior-y: auto;
+  overscroll-behavior-y: contain;
 }
 
 #root {

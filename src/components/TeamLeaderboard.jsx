@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { getTeamMembers, getCurrentUserProfile, updateCurrentUserProfile, updateAdvisorById, deleteAdvisor, subscribeToRealtimeUpdates, syncFromCloud } from '../services/storageService';
 import { BADGES_CATALOG } from '../data/teamData';
-import { Trophy, Award, Medal, Users, Edit3, Check, Star, ShieldCheck, UserPlus, RefreshCw, Trash2, Pencil } from 'lucide-react';
+import { Trophy, Award, Medal, Users, Edit3, Check, Star, ShieldCheck, UserPlus, RefreshCw, Trash2, Pencil, MapPin } from 'lucide-react';
+import { PROVINCIAS_LIST, getAgenciasByProvincia } from '../data/agenciasData';
 
 export default function TeamLeaderboard({ onOpenAuthModal }) {
   const [team, setTeam] = useState(getTeamMembers());
   const [userProfile, setUserProfile] = useState(getCurrentUserProfile());
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editName, setEditName] = useState('');
+  const [editProvincia, setEditProvincia] = useState('');
   const [editBranch, setEditBranch] = useState('');
   const [editRole, setEditRole] = useState('PAI');
   const [editAvatar, setEditAvatar] = useState('👨‍💼');
 
   const [isSyncing, setIsSyncing] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [editRow, setEditRow] = useState({ name: '', branch: '', role: 'PAI', avatar: '👨‍💼' });
+  const [editRow, setEditRow] = useState({ name: '', provincia: '', branch: '', role: 'PAI', avatar: '👨‍💼' });
   const [saveMsg, setSaveMsg] = useState('');
   const [expandedMember, setExpandedMember] = useState(null);
   const [branchFilter, setBranchFilter] = useState('mine'); // mine | all
@@ -54,6 +56,7 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
     setUserProfile(currentProf);
     if (currentProf) {
       setEditName(currentProf.name);
+      setEditProvincia(currentProf.provincia || '');
       setEditBranch(currentProf.branch);
       setEditRole(currentProf.role || 'PAI');
       setEditAvatar(currentProf.avatar);
@@ -68,6 +71,7 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
       const updated = {
         ...userProfile,
         name: editName.trim(),
+        provincia: editProvincia,
         branch: editBranch.trim() || 'Sucursal Central',
         role: editRole,
         avatar: editAvatar
@@ -89,11 +93,11 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
   };
   const handleEditRow = (m) => {
     setEditingId(m.id);
-    setEditRow({ name: m.name, branch: m.branch, role: m.role || 'PAI', avatar: m.avatar });
+    setEditRow({ name: m.name, provincia: m.provincia || '', branch: m.branch, role: m.role || 'PAI', avatar: m.avatar });
   };
   const handleSaveRow = async (id) => {
     if (!editRow.name.trim()) return;
-    await updateAdvisorById(id, { name: editRow.name.trim(), branch: editRow.branch.trim() || 'Sucursal Central', role: editRow.role, avatar: editRow.avatar });
+    await updateAdvisorById(id, { name: editRow.name.trim(), provincia: editRow.provincia, branch: editRow.branch.trim() || 'Sucursal Central', role: editRow.role, avatar: editRow.avatar });
     setEditingId(null);
     loadData();
   };
@@ -181,41 +185,64 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
           </div>
         </div>
 
-        {/* Profile Edit Form */}
+        {/* Profile Edit Form — con Provincia y Sucursal sin desborde */}
         {isEditingProfile && activeUser && (
-          <form onSubmit={handleSaveProfile} style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px', alignItems: 'flex-end' }}>
-            <div>
+          <form onSubmit={handleSaveProfile} style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', alignItems: 'flex-end' }}>
+            <div style={{ minWidth: 0 }}>
               <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Nombre del Asesor:</label>
               <input
                 type="text"
                 value={editName}
                 onChange={e => setEditName(e.target.value)}
-                style={{ width: '100%', padding: '8px 10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                style={{ width: '100%', minWidth: 0, padding: '8px 10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.85rem' }}
               />
             </div>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Cargo / Rol:</label>
               <select
                 value={editRole}
                 onChange={e => setEditRole(e.target.value)}
-                style={{ width: '100%', padding: '8px 10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                style={{ width: '100%', minWidth: 0, padding: '8px 10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.85rem' }}
               >
                 <option value="PAI">👔 PAI (Asesor Comercial)</option>
                 <option value="PAOI">🛡️ PAOI (Supervisor / Organizador)</option>
               </select>
             </div>
-            <div>
-              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Sucursal / Zona:</label>
-              <input
-                type="text"
-                value={editBranch}
-                onChange={e => setEditBranch(e.target.value)}
-                style={{ width: '100%', padding: '8px 10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.85rem' }}
-              />
+            <div style={{ minWidth: 0 }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><MapPin size={10} style={{ display: 'inline', marginRight: '4px' }} />Provincia:</label>
+              <select
+                value={editProvincia}
+                onChange={e => { setEditProvincia(e.target.value); setEditBranch(''); }}
+                style={{ width: '100%', minWidth: 0, padding: '8px 10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.85rem' }}
+              >
+                <option value="">— Seleccioná —</option>
+                {PROVINCIAS_LIST.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
             </div>
-            <div>
+            <div style={{ minWidth: 0 }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Sucursal / Agencia:</label>
+              {editProvincia ? (
+                <select
+                  value={editBranch}
+                  onChange={e => setEditBranch(e.target.value)}
+                  style={{ width: '100%', minWidth: 0, padding: '8px 10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                >
+                  <option value="">— Seleccioná agencia —</option>
+                  {getAgenciasByProvincia(editProvincia).map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={editBranch}
+                  onChange={e => setEditBranch(e.target.value)}
+                  placeholder="Ej: San Martín"
+                  style={{ width: '100%', minWidth: 0, padding: '8px 10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                />
+              )}
+            </div>
+            <div style={{ minWidth: 0 }}>
               <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Avatar:</label>
-              <div style={{ display: 'flex', gap: '6px' }}>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                 {avatarsList.map(av => (
                   <button
                     type="button"
@@ -235,7 +262,7 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
                 ))}
               </div>
             </div>
-            <button type="submit" className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+            <button type="submit" className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem', alignSelf: 'flex-end' }}>
               <Check size={16} /> Guardar
             </button>
             {saveMsg && <div style={{ gridColumn: '1 / -1', padding: '8px 12px', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700, background: saveMsg.startsWith('✅') ? 'rgba(46,196,182,0.12)' : 'rgba(230,57,70,0.12)', border: saveMsg.startsWith('✅') ? '1px solid rgba(46,196,182,0.3)' : '1px solid rgba(230,57,70,0.3)', color: saveMsg.startsWith('✅') ? 'var(--accent-green)' : 'var(--accent-red)' }}>{saveMsg}</div>}
@@ -283,11 +310,22 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
                 const isRowEditing = editingId === member.id;
                 if (isRowEditing) {
                   return (
-                    <div key={member.id} style={{ padding: '12px', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--primary)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <input value={editRow.name} onChange={e=>setEditRow({...editRow,name:e.target.value})} placeholder="Nombre" style={{ padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.85rem' }} />
-                      <div style={{ display:'flex', gap:'6px' }}>
-                        <input value={editRow.branch} onChange={e=>setEditRow({...editRow,branch:e.target.value})} placeholder="Sucursal" style={{ flex:1, padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.8rem' }} />
-                        <select value={editRow.role} onChange={e=>setEditRow({...editRow,role:e.target.value})} style={{ padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.8rem' }}>
+                    <div key={member.id} style={{ padding: '12px', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--primary)', display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0 }}>
+                      <input value={editRow.name} onChange={e=>setEditRow({...editRow,name:e.target.value})} placeholder="Nombre" style={{ padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.85rem', minWidth: 0 }} />
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '6px' }}>
+                        <select value={editRow.provincia} onChange={e=>setEditRow({...editRow,provincia:e.target.value, branch: ''})} style={{ padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.8rem', minWidth: 0 }}>
+                          <option value="">Provincia</option>
+                          {PROVINCIAS_LIST.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                        {editRow.provincia ? (
+                          <select value={editRow.branch} onChange={e=>setEditRow({...editRow,branch:e.target.value})} style={{ padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.8rem', minWidth: 0 }}>
+                            <option value="">Agencia</option>
+                            {getAgenciasByProvincia(editRow.provincia).map(a => <option key={a} value={a}>{a}</option>)}
+                          </select>
+                        ) : (
+                          <input value={editRow.branch} onChange={e=>setEditRow({...editRow,branch:e.target.value})} placeholder="Sucursal" style={{ padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.8rem', minWidth: 0 }} />
+                        )}
+                        <select value={editRow.role} onChange={e=>setEditRow({...editRow,role:e.target.value})} style={{ padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.8rem', minWidth: 0 }}>
                           <option value="PAI">PAI</option>
                           <option value="PAOI">PAOI</option>
                         </select>

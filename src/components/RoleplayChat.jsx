@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { CUSTOMER_PROFILES } from '../data/profiles';
 import { generateCustomerResponse, evaluateSalesSession } from '../services/geminiService';
-import { Send, Mic, Volume2, VolumeX, Award, RotateCcw, AlertCircle, Users, ChevronDown, ChevronUp, Filter } from 'lucide-react';
+import { Send, Mic, Volume2, VolumeX, Award, RotateCcw, AlertCircle, Users, ChevronDown, ChevronUp, Filter, History, Trash2, Lightbulb, CheckCircle2, AlertTriangle, X } from 'lucide-react';
+import { getChatEvaluations, clearChatEvaluations } from '../services/storageService';
 
 export default function RoleplayChat({ onShowFeedback }) {
   const [selectedProfile, setSelectedProfile] = useState(CUSTOMER_PROFILES[0]);
@@ -16,6 +17,9 @@ export default function RoleplayChat({ onShowFeedback }) {
   const [isRecording, setIsRecording] = useState(false);
   const [showProfileSelector, setShowProfileSelector] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showHistory, setShowHistory] = useState(false);
+  const [chatHistory, setChatHistory] = useState(() => getChatEvaluations());
+  const [expandedHistId, setExpandedHistId] = useState(null);
 
   const chatEndRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -206,12 +210,20 @@ export default function RoleplayChat({ onShowFeedback }) {
     try {
       const evaluationResult = await evaluateSalesSession(selectedProfile, messages);
       onShowFeedback(evaluationResult, selectedProfile);
+      // refrescar historial local tras guardar
+      setTimeout(() => setChatHistory(getChatEvaluations()), 300);
     } catch (err) {
       console.error(err);
       setErrorMsg('No se pudo generar la evaluación. Revisa tu conexión a internet.');
     } finally {
       setIsEvaluating(false);
     }
+  };
+
+  const handleClearHistory = () => {
+    if (!confirm('¿Borrar historial de evaluaciones?')) return;
+    clearChatEvaluations();
+    setChatHistory([]);
   };
 
   const filteredProfiles = difficultyFilter === 'Todos'
@@ -426,6 +438,70 @@ export default function RoleplayChat({ onShowFeedback }) {
         {errorMsg && (
           <div style={{ background: 'rgba(230, 57, 70, 0.15)', borderTop: '1px solid rgba(230, 57, 70, 0.3)', padding: '8px 14px', color: 'var(--accent-red)', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <AlertCircle size={14} /> {errorMsg}
+          </div>
+        )}
+
+        {/* Botón historial debajo del chat */}
+        <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button onClick={() => { setChatHistory(getChatEvaluations()); setShowHistory(!showHistory); }} className="btn-secondary" style={{ fontSize: '0.74rem', padding: '6px 10px', gap: '6px' }}>
+            <History size={14} /> {showHistory ? 'Ocultar historial' : `Ver historial (${chatHistory.length})`} {showHistory ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}
+          </button>
+          {chatHistory.length > 0 && showHistory && (
+            <button onClick={handleClearHistory} className="btn-secondary" style={{ fontSize: '0.7rem', padding: '4px 8px', color: 'var(--accent-red)', borderColor: 'rgba(230,57,70,0.3)' }}><Trash2 size={12}/> Limpiar</button>
+          )}
+        </div>
+
+        {showHistory && (
+          <div style={{ maxHeight: '340px', overflowY: 'auto', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.15)', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {chatHistory.length === 0 ? (
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', textAlign: 'center', padding: '16px' }}>Aún no hay evaluaciones. ¡Practicá una charla y pedí tu evaluación!</p>
+            ) : chatHistory.map(item => {
+              const isExp = expandedHistId === item.id;
+              const d = new Date(item.date);
+              const scoreColor = item.score >= 80 ? 'var(--accent-green)' : item.score >= 60 ? 'var(--primary)' : 'var(--accent-red)';
+              return (
+                <div key={item.id} style={{ background: 'var(--bg-card)', border: isExp ? '1px solid var(--primary)' : '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+                  <div onClick={() => setExpandedHistId(isExp ? null : item.id)} style={{ padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                      <span style={{ width: '32px', height: '32px', borderRadius: '50%', background: `${scoreColor}22`, border: `2px solid ${scoreColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.75rem', color: scoreColor, flexShrink: 0 }}>{item.score}</span>
+                      <div style={{ minWidth: 0 }}>
+                        <strong style={{ fontSize: '0.82rem', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.profileAvatar} {item.profileName} • {item.difficulty}</strong>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>{d.toLocaleDateString('es-AR')} {d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} • {item.verdict || 'Evaluación'}</span>
+                      </div>
+                    </div>
+                    <span style={{ color: 'var(--text-dim)', transform: isExp ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><ChevronDown size={16}/></span>
+                  </div>
+                  {isExp && (
+                    <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px', background: 'rgba(0,0,0,0.2)' }}>
+                      <p style={{ fontSize: '0.82rem', color: 'var(--text-main)', fontStyle: 'italic', background: 'rgba(255,255,255,0.04)', padding: '8px 10px', borderRadius: '6px' }}>"{item.summary}"</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', textAlign: 'center' }}>
+                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '6px', borderRadius: '6px' }}><span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Objeciones</span><strong style={{ display: 'block', color: scoreColor }}>{item.objectionHandlingScore ?? '-'}%</strong></div>
+                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '6px', borderRadius: '6px' }}><span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Claridad</span><strong style={{ display: 'block', color: scoreColor }}>{item.conceptClarityScore ?? '-'}%</strong></div>
+                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '6px', borderRadius: '6px' }}><span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Cierre</span><strong style={{ display: 'block', color: scoreColor }}>{item.closingTechniqueScore ?? '-'}%</strong></div>
+                      </div>
+                      {item.strengths?.length > 0 && (
+                        <div style={{ background: 'rgba(46,196,182,0.08)', border: '1px solid rgba(46,196,182,0.2)', padding: '10px', borderRadius: '6px' }}>
+                          <strong style={{ fontSize: '0.7rem', color: 'var(--accent-green)', display: 'flex', alignItems: 'center', gap: '4px' }}><CheckCircle2 size={12}/> Aciertos:</strong>
+                          <ul style={{ paddingLeft: '16px', fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>{item.strengths.map((s,i)=><li key={i}>{s}</li>)}</ul>
+                        </div>
+                      )}
+                      {item.areasForImprovement?.length > 0 && (
+                        <div style={{ background: 'rgba(230,57,70,0.08)', border: '1px solid rgba(230,57,70,0.2)', padding: '10px', borderRadius: '6px' }}>
+                          <strong style={{ fontSize: '0.7rem', color: 'var(--accent-red)', display: 'flex', alignItems: 'center', gap: '4px' }}><AlertTriangle size={12}/> A mejorar:</strong>
+                          <ul style={{ paddingLeft: '16px', fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>{item.areasForImprovement.map((s,i)=><li key={i}>{s}</li>)}</ul>
+                        </div>
+                      )}
+                      {item.proTip && (
+                        <div style={{ background: 'rgba(255,159,28,0.08)', border: '1px solid rgba(255,159,28,0.2)', padding: '10px', borderRadius: '6px', display: 'flex', gap: '8px' }}>
+                          <Lightbulb size={14} color="var(--primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                          <p style={{ fontSize: '0.78rem', color: 'var(--text-main)' }}>{item.proTip}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 

@@ -6,6 +6,7 @@ const TEAM_STORAGE_KEY = 'autocredito_team_members_v2';
 const RESERVATIONS_STORAGE_KEY = 'autocredito_car_reservations_v2';
 const ACTIVE_ADVISOR_ID_KEY = 'autocredito_active_advisor_id';
 const PITCH_HISTORY_KEY = 'autocredito_pitch_history_v1';
+const CHAT_EVAL_KEY = 'autocredito_chat_evals_v1';
 
 const broadcastChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('autocredito_sync_channel') : null;
 
@@ -417,6 +418,26 @@ export function savePitchResult(result) {
   const updated = [result, ...history.slice(0, 49)];
   localStorage.setItem(PITCH_HISTORY_KEY, JSON.stringify(updated));
   return updated;
+}
+
+export function getChatEvaluations() {
+  const data = localStorage.getItem(CHAT_EVAL_KEY);
+  if (data) {
+    try { return JSON.parse(data); } catch (e) { console.error(e); }
+  }
+  return [];
+}
+
+export function saveChatEvaluation(evalData) {
+  const history = getChatEvaluations();
+  const updated = [evalData, ...history.slice(0, 49)];
+  localStorage.setItem(CHAT_EVAL_KEY, JSON.stringify(updated));
+  return updated;
+}
+
+export function clearChatEvaluations() {
+  localStorage.removeItem(CHAT_EVAL_KEY);
+  return [];
 }
 
 /**

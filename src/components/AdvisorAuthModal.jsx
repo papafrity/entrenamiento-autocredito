@@ -272,11 +272,11 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
                 const isEditing = editingId === member.id;
                 if (isEditing) {
                   return (
-                    <div key={member.id} style={{ padding: '12px', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--primary)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <input value={editForm.name} onChange={e=>setEditForm({...editForm,name:e.target.value})} placeholder="Nombre" style={{ padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.85rem' }} />
-                      <div style={{ display:'flex', gap:'6px' }}>
-                        <input value={editForm.provincia} onChange={e=>setEditForm({...editForm,provincia:e.target.value})} placeholder="Provincia" style={{ flex:1, padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.8rem' }} />
-                        <input value={editForm.branch} onChange={e=>setEditForm({...editForm,branch:e.target.value})} placeholder="Sucursal" style={{ flex:1, padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.8rem' }} />
+                    <div key={member.id} style={{ padding: '12px', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--primary)', display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0 }}>
+                      <input value={editForm.name} onChange={e=>setEditForm({...editForm,name:e.target.value})} placeholder="Nombre" style={{ padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.85rem', minWidth: 0 }} />
+                      <div style={{ display:'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap:'6px' }}>
+                        <input value={editForm.provincia} onChange={e=>setEditForm({...editForm,provincia:e.target.value})} placeholder="Provincia" style={{ padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.8rem', minWidth: 0 }} />
+                        <input value={editForm.branch} onChange={e=>setEditForm({...editForm,branch:e.target.value})} placeholder="Sucursal" style={{ padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.8rem', minWidth: 0 }} />
                       </div>
                       <div style={{ display:'flex', gap:'6px' }}>
                         <input value={editForm.phone} onChange={e=>setEditForm({...editForm,phone:e.target.value})} placeholder="Tel" style={{ flex:1, padding:'8px', background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'6px', color:'var(--text-main)', fontSize:'0.8rem' }} />
