@@ -56,8 +56,8 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
             title="Cambiar o registrar asesor"
           >
             <span>{currentUser?.avatar || '👨‍💼'}</span>
-            <span style={{ maxWidth: '140px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 600 }}>
-              {currentUser ? `${currentUser.name} (${currentUser.branch})` : 'Registrar Asesor'}
+            <span style={{ maxWidth: '170px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 600 }}>
+              {currentUser ? `${currentUser.name} (${currentUser.role || 'PAI'})` : 'Registrar Asesor'}
             </span>
           </button>
 

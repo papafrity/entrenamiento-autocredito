@@ -11,6 +11,7 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
 
   const [activeTab, setActiveTab] = useState('select');
   const [newName, setNewName] = useState('');
+  const [newRole, setNewRole] = useState('PAI'); // 'PAI' o 'PAOI'
   const [newProvincia, setNewProvincia] = useState('');
   const [newAgencia, setNewAgencia] = useState('');
   const [newPhone, setNewPhone] = useState('');
@@ -48,6 +49,7 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
     if (isOpen) {
       refreshData(true); // Sincroniza con la nube al abrir
       setNewName('');
+      setNewRole('PAI');
       setNewProvincia('');
       setNewAgencia('');
       setNewPhone('');
@@ -88,6 +90,7 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
     try {
       await registerNewAdvisor({
         name: newName,
+        role: newRole,
         provincia: newProvincia,
         branch: newAgencia,
         phone: newPhone,
@@ -242,7 +245,20 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ fontSize: '1.4rem' }}>{member.avatar}</span>
                       <div>
-                        <strong style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>{member.name}</strong>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <strong style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>{member.name}</strong>
+                          <span style={{
+                            fontSize: '0.65rem',
+                            fontWeight: 800,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            background: member.role === 'PAOI' ? 'rgba(255, 159, 28, 0.2)' : 'rgba(46, 196, 182, 0.2)',
+                            color: member.role === 'PAOI' ? 'var(--primary)' : 'var(--accent-green)',
+                            border: member.role === 'PAOI' ? '1px solid rgba(255, 159, 28, 0.4)' : '1px solid rgba(46, 196, 182, 0.4)'
+                          }}>
+                            {member.role === 'PAOI' ? '🛡️ PAOI (Supervisor)' : '👔 PAI (Asesor)'}
+                          </span>
+                        </div>
                         <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                           {member.provincia ? `${member.provincia} — ` : ''}{member.branch}
                         </p>
@@ -274,7 +290,7 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
               <div style={{ marginTop: '16px', padding: '10px 14px', background: 'rgba(255,159,28,0.1)', border: '1px solid rgba(255,159,28,0.25)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                 <ShieldCheck size={16} color="var(--primary)" />
                 <span style={{ fontSize: '0.82rem', color: 'var(--primary)', fontWeight: 600 }}>
-                  Tu asesor activo: {currentUser?.name}
+                  Tu asesor activo: {currentUser?.name} {currentUser?.role ? `(${currentUser.role})` : ''}
                 </span>
               </div>
               <button
@@ -301,6 +317,52 @@ export default function AdvisorAuthModal({ isOpen, onClose, onAdvisorChanged }) 
                   style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.88rem' }}
                   autoFocus
                 />
+              </div>
+
+              {/* Rol Comercial: PAI vs PAOI */}
+              <div>
+                <label style={{ fontSize: '0.78rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  Tipo de Asesor / Cargo en AutoCrédito:
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div
+                    onClick={() => setNewRole('PAI')}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: newRole === 'PAI' ? 'rgba(46, 196, 182, 0.15)' : 'rgba(255,255,255,0.02)',
+                      border: newRole === 'PAI' ? '1px solid var(--accent-green)' : '1px solid var(--border-color)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    <strong style={{ fontSize: '0.84rem', color: newRole === 'PAI' ? 'var(--accent-green)' : 'var(--text-main)', display: 'block' }}>
+                      👔 PAI
+                    </strong>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      Asesor Comercial Independiente
+                    </span>
+                  </div>
+
+                  <div
+                    onClick={() => setNewRole('PAOI')}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: newRole === 'PAOI' ? 'rgba(255, 159, 28, 0.15)' : 'rgba(255,255,255,0.02)',
+                      border: newRole === 'PAOI' ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    <strong style={{ fontSize: '0.84rem', color: newRole === 'PAOI' ? 'var(--primary)' : 'var(--text-main)', display: 'block' }}>
+                      🛡️ PAOI
+                    </strong>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      Supervisor / Organizador
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Provincia */}

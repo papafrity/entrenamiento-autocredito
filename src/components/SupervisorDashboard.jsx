@@ -439,7 +439,19 @@ export default function SupervisorDashboard() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ fontSize: '1.3rem' }}>{advisor.avatar || '👨‍💼'}</span>
                       <div>
-                        <strong style={{ display: 'block', color: 'var(--text-main)' }}>{advisor.name}</strong>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <strong style={{ color: 'var(--text-main)' }}>{advisor.name}</strong>
+                          <span style={{
+                            fontSize: '0.62rem',
+                            fontWeight: 800,
+                            padding: '1px 5px',
+                            borderRadius: '4px',
+                            background: advisor.role === 'PAOI' ? 'rgba(255, 159, 28, 0.25)' : 'rgba(46, 196, 182, 0.2)',
+                            color: advisor.role === 'PAOI' ? 'var(--primary)' : 'var(--accent-green)'
+                          }}>
+                            {advisor.role || 'PAI'}
+                          </span>
+                        </div>
                         <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>{advisor.phone || 'Sin tel'}</span>
                       </div>
                     </div>

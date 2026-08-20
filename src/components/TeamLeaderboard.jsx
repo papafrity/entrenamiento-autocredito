@@ -9,6 +9,7 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editName, setEditName] = useState('');
   const [editBranch, setEditBranch] = useState('');
+  const [editRole, setEditRole] = useState('PAI');
   const [editAvatar, setEditAvatar] = useState('👨‍💼');
 
   const [isSyncing, setIsSyncing] = useState(false);
@@ -46,6 +47,7 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
     if (currentProf) {
       setEditName(currentProf.name);
       setEditBranch(currentProf.branch);
+      setEditRole(currentProf.role || 'PAI');
       setEditAvatar(currentProf.avatar);
     }
   };
@@ -57,6 +59,7 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
       ...userProfile,
       name: editName.trim() || 'Mi Asesor',
       branch: editBranch.trim() || 'Sucursal Central',
+      role: editRole,
       avatar: editAvatar
     };
     await updateCurrentUserProfile(updated);
@@ -81,10 +84,23 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
               {activeUser ? activeUser.avatar : '👤'}
             </span>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>
                   {activeUser ? activeUser.name : 'Asesor No Registrado'}
                 </h2>
+                {activeUser && (
+                  <span style={{
+                    fontSize: '0.68rem',
+                    fontWeight: 800,
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    background: activeUser.role === 'PAOI' ? 'rgba(255, 159, 28, 0.25)' : 'rgba(46, 196, 182, 0.2)',
+                    color: activeUser.role === 'PAOI' ? 'var(--primary)' : 'var(--accent-green)',
+                    border: activeUser.role === 'PAOI' ? '1px solid var(--primary)' : '1px solid var(--accent-green)'
+                  }}>
+                    {activeUser.role === 'PAOI' ? '🛡️ PAOI (Supervisor)' : '👔 PAI (Asesor)'}
+                  </span>
+                )}
                 {activeUser && (
                   <span className="badge badge-medium" style={{ fontSize: '0.68rem' }}>{activeUser.branch}</span>
                 )}
@@ -141,6 +157,17 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
                 onChange={e => setEditName(e.target.value)}
                 style={{ width: '100%', padding: '8px 10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.85rem' }}
               />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Cargo / Rol:</label>
+              <select
+                value={editRole}
+                onChange={e => setEditRole(e.target.value)}
+                style={{ width: '100%', padding: '8px 10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', fontSize: '0.85rem' }}
+              >
+                <option value="PAI">👔 PAI (Asesor Comercial)</option>
+                <option value="PAOI">🛡️ PAOI (Supervisor / Organizador)</option>
+              </select>
             </div>
             <div>
               <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Sucursal / Zona:</label>
@@ -243,8 +270,21 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
                       <span style={{ fontSize: '1.4rem' }}>{member.avatar}</span>
 
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.92rem' }}>
-                          {member.name} {isCurrent && <span style={{ color: 'var(--primary)', fontSize: '0.75rem' }}>(Tú)</span>}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontWeight: 700, fontSize: '0.92rem' }}>
+                            {member.name}
+                          </span>
+                          <span style={{
+                            fontSize: '0.62rem',
+                            fontWeight: 800,
+                            padding: '1px 5px',
+                            borderRadius: '4px',
+                            background: member.role === 'PAOI' ? 'rgba(255, 159, 28, 0.25)' : 'rgba(46, 196, 182, 0.2)',
+                            color: member.role === 'PAOI' ? 'var(--primary)' : 'var(--accent-green)'
+                          }}>
+                            {member.role || 'PAI'}
+                          </span>
+                          {isCurrent && <span style={{ color: 'var(--primary)', fontSize: '0.72rem', fontWeight: 600 }}>(Tú)</span>}
                         </div>
                         <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                           {member.branch} • {member.simulationsCompleted || 0} simulaciones

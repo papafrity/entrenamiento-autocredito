@@ -185,19 +185,21 @@ export function getCurrentUserProfile() {
 /**
  * Registra un nuevo asesor y lo sube inmediatamente a Firestore
  */
-export async function registerNewAdvisor({ name, provincia, branch, phone, avatar }) {
+export async function registerNewAdvisor({ name, provincia, branch, phone, avatar, role }) {
   const team = getTeamMembers();
   const newId = 'adv_' + Date.now();
   
   const newAdvisor = {
     id: newId,
     name: name.trim(),
+    role: role || 'PAI', // 'PAI' (Asesor) o 'PAOI' (Supervisor / Organizador)
     provincia: provincia?.trim() || '',
     branch: branch?.trim() || 'Sucursal Central',
     phone: phone?.trim() || 'Sin teléfono',
     avatar: avatar || '👨‍💼',
     points: 100,
     simulationsCompleted: 0,
+    salesClosed: 0,
     unlockedBadges: ['welcome_badge'],
     createdAt: new Date().toISOString()
   };
