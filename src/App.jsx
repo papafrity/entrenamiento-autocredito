@@ -10,6 +10,7 @@ import ObjectionsGuide from './components/ObjectionsGuide';
 import SalesTips from './components/SalesTips';
 import PaymentSeasonTimer from './components/PaymentSeasonTimer';
 import ElevatorPitch from './components/ElevatorPitch';
+import CommissionCalculator from './components/CommissionCalculator';
 import SupervisorDashboard from './components/SupervisorDashboard';
 import FeedbackModal from './components/FeedbackModal';
 import AdvisorAuthModal from './components/AdvisorAuthModal';
@@ -100,6 +101,10 @@ export default function App() {
 
         {activeTab === 'calculator' && (
           <PlanCalculator />
+        )}
+
+        {activeTab === 'commissions' && (
+          <CommissionCalculator />
         )}
 
         {activeTab === 'flash' && (

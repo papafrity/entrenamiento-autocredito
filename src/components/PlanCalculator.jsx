@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { OFFICIAL_AUTOCREDITO_PLANS, OFFICIAL_PLANS_CATEGORIES } from '../data/officialPlans';
 import { Calculator, CheckCircle2, XCircle, Share2, DollarSign, Award, HelpCircle, FileText, Sparkles, Send, Download, Search, Filter, Image } from 'lucide-react';
 import VisualCardModal from './VisualCardModal';
@@ -9,6 +9,7 @@ export default function PlanCalculator() {
   const [selectedBrand, setSelectedBrand] = useState('Todas');
   const [selectedPlanCode, setSelectedPlanCode] = useState('31607'); // Default: Fiat Cronos
   const [searchFilter, setSearchFilter] = useState('');
+  const [sortBy, setSortBy] = useState('default'); // 'default', 'price_desc', 'price_asc', 'quote_desc', 'quote_asc'
   const [isVisualCardOpen, setIsVisualCardOpen] = useState(false);
 
   // Estado para modo personalizado libre
@@ -35,7 +36,15 @@ export default function PlanCalculator() {
     return matchesCat && matchesBrand && matchesSearch;
   });
 
-  const selectedPlan = OFFICIAL_AUTOCREDITO_PLANS.find(p => p.code === selectedPlanCode) || filteredPlans[0] || OFFICIAL_AUTOCREDITO_PLANS[0];
+  const sortedPlans = [...filteredPlans].sort((a, b) => {
+    if (sortBy === 'price_desc') return b.nominalValue - a.nominalValue;
+    if (sortBy === 'price_asc') return a.nominalValue - b.nominalValue;
+    if (sortBy === 'quote_desc') return b.quote1to7 - a.quote1to7;
+    if (sortBy === 'quote_asc') return a.quote1to7 - b.quote1to7;
+    return 0; // default
+  });
+
+  const selectedPlan = OFFICIAL_AUTOCREDITO_PLANS.find(p => p.code === selectedPlanCode) || sortedPlans[0] || OFFICIAL_AUTOCREDITO_PLANS[0];
 
   const handleShareOfficialQuote = (plan) => {
     const text = `🚗 *COTIZACIÓN OFICIAL AUTOCRÉDITO* 🚗\n` +
@@ -171,25 +180,52 @@ export default function PlanCalculator() {
               ))}
             </div>
 
-            {/* Search Input */}
-            <div style={{ position: 'relative', minWidth: '220px', flex: '1', maxWidth: '340px' }}>
-              <Search size={16} color="var(--text-dim)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-              <input
-                type="text"
-                placeholder="Buscar por auto, marca o código..."
-                value={searchFilter}
-                onChange={e => setSearchFilter(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px 8px 36px',
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-sm)',
-                  color: 'var(--text-main)',
-                  fontSize: '0.84rem',
-                  outline: 'none'
-                }}
-              />
+            {/* Search Input and Sort Selector */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', flex: '1', minWidth: '260px', justifyContent: 'flex-end' }}>
+              <div style={{ position: 'relative', minWidth: '200px', flex: '1', maxWidth: '300px' }}>
+                <Search size={16} color="var(--text-dim)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                <input
+                  type="text"
+                  placeholder="Buscar por auto, marca o código..."
+                  value={searchFilter}
+                  onChange={e => setSearchFilter(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px 8px 36px',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    color: 'var(--text-main)',
+                    fontSize: '0.84rem',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+
+              {/* Sort By Dropdown */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <select
+                  value={sortBy}
+                  onChange={e => setSortBy(e.target.value)}
+                  style={{
+                    padding: '8px 12px',
+                    background: 'var(--bg-card)',
+                    border: sortBy !== 'default' ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    color: sortBy !== 'default' ? 'var(--primary)' : 'var(--text-main)',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    outline: 'none'
+                  }}
+                >
+                  <option value="default">↕️ Ordenar: Por Defecto</option>
+                  <option value="price_desc">💰 Capital: Mayor a Menor</option>
+                  <option value="price_asc">💰 Capital: Menor a Mayor</option>
+                  <option value="quote_desc">💳 Cuota: Mayor a Menor</option>
+                  <option value="quote_asc">💳 Cuota: Menor a Mayor</option>
+                </select>
+              </div>
             </div>
 
           </div>
@@ -234,11 +270,18 @@ export default function PlanCalculator() {
             
             {/* Left: Plan Selector List */}
             <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '560px', overflowY: 'auto' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Seleccionar Plan ({filteredPlans.length} disponibles):
-              </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Seleccionar Plan ({sortedPlans.length}):
+                </span>
+                {sortBy !== 'default' && (
+                  <span style={{ fontSize: '0.68rem', color: 'var(--primary)', fontWeight: 600 }}>
+                    Orden activo
+                  </span>
+                )}
+              </div>
 
-              {filteredPlans.map(plan => {
+              {sortedPlans.map(plan => {
                 const isSelected = plan.code === selectedPlan.code;
                 return (
                   <div

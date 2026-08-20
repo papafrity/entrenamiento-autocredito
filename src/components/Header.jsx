@@ -1,11 +1,12 @@
 import React from 'react';
-import { MessageSquare, Car, Trophy, MessageCircle, Calculator, Zap, BookOpen, TrendingUp, Flame, ShieldCheck } from 'lucide-react';
+import { MessageSquare, Car, Trophy, MessageCircle, Calculator, Zap, BookOpen, TrendingUp, Flame, ShieldCheck, DollarSign } from 'lucide-react';
 
 export default function Header({ activeTab, setActiveTab, currentUser, onOpenAuthModal }) {
   const tabs = [
     { id: 'chat', label: 'Chat IA', icon: MessageSquare },
     { id: 'pitch', label: 'Pitch 60s', icon: Flame },
     { id: 'calculator', label: 'Calculadora & Placas', icon: Calculator },
+    { id: 'commissions', label: 'Mis Ganancias', icon: DollarSign },
     { id: 'whatsapp', label: 'WhatsApp IA', icon: MessageCircle },
     { id: 'car', label: 'Auto & Visitas', icon: Car },
     { id: 'team', label: 'Equipo & Medallas', icon: Trophy },

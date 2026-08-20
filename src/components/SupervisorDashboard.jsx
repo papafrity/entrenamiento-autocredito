@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { getTeamMembers, getCarReservations, awardPointsToCurrentUser, saveTeamMembers, syncFromCloud } from '../services/storageService';
-import { ShieldCheck, Users, Trophy, Car, Award, Download, Plus, Star, Lock, Unlock, RefreshCw, CheckCircle2, TrendingUp } from 'lucide-react';
+import { ShieldCheck, Users, Trophy, Car, Award, Download, Plus, Star, Lock, Unlock, RefreshCw, CheckCircle2, TrendingUp, Target, Edit3, Check, Sparkles, Flame } from 'lucide-react';
+
+const GOAL_STORAGE_KEY = 'autocredito_agency_monthly_goal_v1';
 
 export default function SupervisorDashboard() {
   const [team, setTeam] = useState(getTeamMembers());
@@ -10,6 +12,13 @@ export default function SupervisorDashboard() {
   const [pinError, setPinError] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [bonusSuccessMsg, setBonusSuccessMsg] = useState('');
+
+  // Metas de la agencia
+  const [monthlySalesGoal, setMonthlySalesGoal] = useState(() => {
+    return Number(localStorage.getItem(GOAL_STORAGE_KEY)) || 30;
+  });
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [editGoalInput, setEditGoalInput] = useState(monthlySalesGoal);
 
   // PIN por defecto para el supervisor de agencia (fácil de usar)
   const SUPERVISOR_PIN = '1234';
@@ -46,6 +55,35 @@ export default function SupervisorDashboard() {
     }
   };
 
+  const handleSaveGoal = (e) => {
+    e?.preventDefault();
+    const parsed = Number(editGoalInput);
+    if (parsed > 0) {
+      setMonthlySalesGoal(parsed);
+      localStorage.setItem(GOAL_STORAGE_KEY, String(parsed));
+      setIsEditingGoal(false);
+      setBonusSuccessMsg(`¡Meta mensual de agencia actualizada a ${parsed} suscripciones!`);
+      setTimeout(() => setBonusSuccessMsg(''), 3000);
+    }
+  };
+
+  const handleAddRealSale = async (advisorId) => {
+    const currentTeam = getTeamMembers();
+    const index = currentTeam.findIndex(a => a.id === advisorId);
+    if (index !== -1) {
+      const adv = currentTeam[index];
+      adv.salesClosed = (adv.salesClosed || 0) + 1;
+      adv.points = (adv.points || 0) + 150; // +150 pts por venta real
+      if (!adv.unlockedBadges.includes('closer_star')) {
+        adv.unlockedBadges.push('closer_star');
+      }
+      await saveTeamMembers(currentTeam);
+      loadData();
+      setBonusSuccessMsg(`🎉 ¡Venta registrada para ${adv.name}! (+150 pts y +1 al objetivo de agencia)`);
+      setTimeout(() => setBonusSuccessMsg(''), 3500);
+    }
+  };
+
   const handleAwardBonus = async (advisorId, bonusPoints, reason) => {
     const currentTeam = getTeamMembers();
     const index = currentTeam.findIndex(a => a.id === advisorId);
@@ -59,9 +97,9 @@ export default function SupervisorDashboard() {
   };
 
   const handleExportTeamReport = () => {
-    const headers = 'ID;Nombre;Provincia;Sucursal;Telefono;Puntos;Simulaciones;Insignias;Fecha_Alta\n';
+    const headers = 'ID;Nombre;Provincia;Sucursal;Telefono;Puntos;Ventas_Reales;Simulaciones;Insignias;Fecha_Alta\n';
     const rows = team.map(a => 
-      `${a.id};${a.name};${a.provincia || ''};${a.branch};${a.phone};${a.points || 0};${a.simulationsCompleted || 0};${(a.unlockedBadges || []).join('|')};${a.createdAt || ''}`
+      `${a.id};${a.name};${a.provincia || ''};${a.branch};${a.phone};${a.points || 0};${a.salesClosed || 0};${a.simulationsCompleted || 0};${(a.unlockedBadges || []).join('|')};${a.createdAt || ''}`
     ).join('\n');
 
     const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' });
@@ -78,6 +116,14 @@ export default function SupervisorDashboard() {
   const totalPoints = team.reduce((acc, a) => acc + (a.points || 0), 0);
   const avgPoints = team.length > 0 ? Math.round(totalPoints / team.length) : 0;
   const totalSimulations = team.reduce((acc, a) => acc + (a.simulationsCompleted || 0), 0);
+  const totalRealSales = team.reduce((acc, a) => acc + (a.salesClosed || 0), 0);
+
+  // Cálculo del avance del objetivo mensual
+  const goalProgress = Math.min(100, Math.round((totalRealSales / monthlySalesGoal) * 100));
+  const now = new Date();
+  const currentDay = now.getDate();
+  const totalDaysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const monthProgress = Math.round((currentDay / totalDaysInMonth) * 100);
 
   // Pantalla de Bloqueo por PIN
   if (!isUnlocked) {
@@ -176,7 +222,7 @@ export default function SupervisorDashboard() {
               <span className="badge badge-medium" style={{ fontSize: '0.65rem' }}>Supervisor Activo</span>
             </div>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Monitoreo de actividad del equipo, rendimiento en simulaciones y asignación de bonos.
+              Metas mensuales del equipo, monitoreo de rendimiento y asignación de bonos de producción.
             </p>
           </div>
         </div>
@@ -208,6 +254,105 @@ export default function SupervisorDashboard() {
         </div>
       )}
 
+      {/* METAS Y OBJETIVOS DEL MES PARA EL EQUIPO (Punto 5) */}
+      <div className="glass-card" style={{
+        padding: '24px',
+        marginBottom: '20px',
+        border: '2px solid var(--primary)',
+        background: 'linear-gradient(135deg, rgba(255, 159, 28, 0.12) 0%, rgba(18, 25, 41, 0.95) 100%)',
+        boxShadow: '0 0 25px rgba(255, 159, 28, 0.15)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ background: 'rgba(255, 159, 28, 0.2)', padding: '8px', borderRadius: '10px' }}>
+              <Target size={24} color="var(--primary)" />
+            </div>
+            <div>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>
+                🎯 Meta Mensual de Suscripciones del Equipo
+              </h3>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                Objetivo de producción de la agencia para la temporada actual
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {!isEditingGoal ? (
+              <button
+                onClick={() => {
+                  setEditGoalInput(monthlySalesGoal);
+                  setIsEditingGoal(true);
+                }}
+                className="btn-secondary"
+                style={{ fontSize: '0.78rem', padding: '6px 12px', gap: '4px' }}
+              >
+                <Edit3 size={13} /> Editar Meta ({monthlySalesGoal} ventas)
+              </button>
+            ) : (
+              <form onSubmit={handleSaveGoal} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <input
+                  type="number"
+                  min="1"
+                  max="500"
+                  value={editGoalInput}
+                  onChange={e => setEditGoalInput(e.target.value)}
+                  style={{ width: '80px', padding: '6px 8px', background: 'var(--bg-input)', border: '1px solid var(--primary)', borderRadius: 'var(--radius-sm)', color: '#fff', fontSize: '0.85rem', textAlign: 'center' }}
+                  autoFocus
+                />
+                <button type="submit" className="btn-primary" style={{ padding: '6px 10px', fontSize: '0.75rem' }}>
+                  <Check size={14} />
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+
+        {/* Progress Bar Display */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div>
+              <span style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--primary)', lineHeight: 1 }}>
+                {totalRealSales}
+              </span>
+              <span style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginLeft: '6px' }}>
+                / {monthlySalesGoal} suscripciones logradas
+              </span>
+            </div>
+
+            <div style={{ textAlign: 'right' }}>
+              <strong style={{ fontSize: '1.4rem', color: goalProgress >= 100 ? 'var(--accent-green)' : 'var(--primary)' }}>
+                {goalProgress}%
+              </strong>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', display: 'block' }}>
+                {goalProgress >= 100 ? '🎉 ¡META SUPERADA!' : `Faltan ${Math.max(0, monthlySalesGoal - totalRealSales)} ventas`}
+              </span>
+            </div>
+          </div>
+
+          {/* Progress Track */}
+          <div style={{ width: '100%', height: '14px', background: 'rgba(0,0,0,0.4)', borderRadius: '7px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{
+              width: `${goalProgress}%`,
+              height: '100%',
+              background: goalProgress >= 100
+                ? 'linear-gradient(90deg, var(--accent-green) 0%, #48cae4 100%)'
+                : 'linear-gradient(90deg, var(--primary) 0%, #f77f00 100%)',
+              borderRadius: '7px',
+              transition: 'width 0.4s ease'
+            }} />
+          </div>
+
+          {/* Rhythm / Pacing Indicator */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--text-dim)', marginTop: '2px' }}>
+            <span>📅 Día {currentDay} de {totalDaysInMonth} del mes ({monthProgress}% transcurrido)</span>
+            <span style={{ color: goalProgress >= monthProgress ? 'var(--accent-green)' : 'var(--accent-red)', fontWeight: 600 }}>
+              {goalProgress >= monthProgress ? '⚡ Ritmo de ventas por encima de lo esperado' : '⚠️ Se requiere acelerar el ritmo de cierre'}
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Metric Cards Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '20px' }}>
         
@@ -224,13 +369,13 @@ export default function SupervisorDashboard() {
 
         <div className="glass-card" style={{ padding: '18px', borderLeft: '4px solid var(--secondary)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>SIMULACIONES TOTALES</span>
-            <Trophy size={18} color="var(--secondary)" />
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>VENTAS REALES CERRADAS</span>
+            <Flame size={18} color="var(--secondary)" />
           </div>
           <div style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-main)', marginTop: '6px' }}>
-            {totalSimulations}
+            {totalRealSales}
           </div>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Sesiones de rol completadas</span>
+          <span style={{ fontSize: '0.72rem', color: 'var(--primary)' }}>Suma directa al objetivo</span>
         </div>
 
         <div className="glass-card" style={{ padding: '18px', borderLeft: '4px solid var(--accent-green)' }}>
@@ -261,8 +406,8 @@ export default function SupervisorDashboard() {
       <div className="glass-panel" style={{ padding: '20px', overflowX: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
           <div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Desempeño Individual de Asesores</h3>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Revisá el progreso de cada integrante y asigná bonificaciones</p>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Desempeño Individual y Registro de Ventas</h3>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Sumá ventas reales cerradas (+150 pts) o asigná bonificaciones al equipo</p>
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
             Total: {team.length} asesores
@@ -274,7 +419,7 @@ export default function SupervisorDashboard() {
             <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>
               <th style={{ padding: '10px 12px' }}>Asesor</th>
               <th style={{ padding: '10px 12px' }}>Provincia / Sucursal</th>
-              <th style={{ padding: '10px 12px' }}>Teléfono</th>
+              <th style={{ padding: '10px 12px', textAlign: 'center' }}>Ventas Reales</th>
               <th style={{ padding: '10px 12px', textAlign: 'center' }}>Simulaciones</th>
               <th style={{ padding: '10px 12px', textAlign: 'right' }}>Puntos</th>
               <th style={{ padding: '10px 12px', textAlign: 'center' }}>Acciones Supervisor</th>
@@ -288,14 +433,14 @@ export default function SupervisorDashboard() {
                 </td>
               </tr>
             ) : (
-              [...team].sort((a, b) => (b.points || 0) - (a.points || 0)).map((advisor, index) => (
+              [...team].sort((a, b) => (b.salesClosed || 0) - (a.salesClosed || 0) || (b.points || 0) - (a.points || 0)).map((advisor, index) => (
                 <tr key={advisor.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', transition: 'background 0.15s' }}>
                   <td style={{ padding: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ fontSize: '1.3rem' }}>{advisor.avatar || '👨‍💼'}</span>
                       <div>
                         <strong style={{ display: 'block', color: 'var(--text-main)' }}>{advisor.name}</strong>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>ID: {advisor.id}</span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>{advisor.phone || 'Sin tel'}</span>
                       </div>
                     </div>
                   </td>
@@ -304,8 +449,10 @@ export default function SupervisorDashboard() {
                       {advisor.provincia ? `${advisor.provincia} — ` : ''}{advisor.branch}
                     </span>
                   </td>
-                  <td style={{ padding: '12px', color: 'var(--text-muted)' }}>
-                    {advisor.phone || 'Sin teléfono'}
+                  <td style={{ padding: '12px', textAlign: 'center' }}>
+                    <span className="badge badge-hard" style={{ fontSize: '0.75rem', fontWeight: 800, padding: '3px 8px' }}>
+                      {advisor.salesClosed || 0} cerradas
+                    </span>
                   </td>
                   <td style={{ padding: '12px', textAlign: 'center' }}>
                     <span className="badge badge-medium" style={{ fontSize: '0.7rem' }}>
@@ -319,22 +466,22 @@ export default function SupervisorDashboard() {
                     <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginLeft: '2px' }}>pts</span>
                   </td>
                   <td style={{ padding: '12px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
                       <button
-                        onClick={() => handleAwardBonus(advisor.id, 50, 'Venta Cerrada')}
-                        className="btn-secondary"
-                        style={{ fontSize: '0.7rem', padding: '4px 8px', color: 'var(--accent-green)', borderColor: 'rgba(46, 196, 182, 0.3)' }}
-                        title="Otorgar +50 pts por cierre comercial real"
+                        onClick={() => handleAddRealSale(advisor.id)}
+                        className="btn-primary"
+                        style={{ fontSize: '0.72rem', padding: '4px 10px', background: 'linear-gradient(135deg, var(--accent-green) 0%, #00b4d8 100%)', color: '#000' }}
+                        title="Anotar 1 venta real cerrada (+150 pts al asesor y +1 a la meta de agencia)"
                       >
-                        +50 Venta
+                        +1 Venta Real
                       </button>
                       <button
-                        onClick={() => handleAwardBonus(advisor.id, 100, 'Destacado del Mes')}
-                        className="btn-primary"
-                        style={{ fontSize: '0.7rem', padding: '4px 8px' }}
-                        title="Otorgar +100 pts por premio del mes"
+                        onClick={() => handleAwardBonus(advisor.id, 50, 'Desempeño Destacado')}
+                        className="btn-secondary"
+                        style={{ fontSize: '0.7rem', padding: '4px 8px', borderColor: 'rgba(255, 159, 28, 0.4)' }}
+                        title="Otorgar +50 pts extra"
                       >
-                        +100 Premio
+                        +50 Bono
                       </button>
                     </div>
                   </td>
