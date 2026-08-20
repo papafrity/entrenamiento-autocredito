@@ -23,7 +23,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 108570.00,
   diTotal: 525478.80,
   di2Quotes: 262739.40,
-  image: '/products/34545.png',
+  image: '/products/34545.jpg',
   specs: {
    seguridad: ["Sensor de lluvia", "Abs", "Distribución electrónica de frenado"],
    confort: ["Vidrios del. - tras. Eléctricos", "Cámara de visión trasera", "Sensores de estacionamiento delanteros y"],
@@ -55,7 +55,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 123420.00,
   diTotal: 597352.80,
   di2Quotes: 298676.40,
-  image: '/products/30041.png',
+  image: '/products/30041.jpg',
   specs: {
    seguridad: ["Tercera luz de stop", "Alarma e inmovilizador de motor", "Control de estabilidad"],
    confort: ["Limitador de velocidad", "Computadora de a bordo", "Espejos exteriores eléctricos"],
@@ -74,7 +74,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 125070.00,
   diTotal: 605338.80,
   di2Quotes: 302669.40,
-  image: '/products/30042.png',
+  image: '/products/30042.jpg',
   specs: {
    seguridad: ["Control de estabilidad", "Alarma e inmovilizador de motor"],
    confort: ["Llantas aleación", "Computadora de a bordo", "Cierre de puertas centralizado"],
@@ -93,7 +93,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 134970.00,
   diTotal: 653254.80,
   di2Quotes: 326627.40,
-  image: '/products/23642.png',
+  image: '/products/23642.jpg',
   specs: {
    seguridad: ["Tablero digital."],
    confort: ["Levanta vidrios eléctricos.", "Sistema de cargado inteligente"],
@@ -125,7 +125,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 143220.00,
   diTotal: 693184.80,
   di2Quotes: 346592.40,
-  image: '/products/15658.png',
+  image: '/products/15658.jpg',
   specs: {
    seguridad: ["Control de estabilidad", "Autobloqueo de puertas con velocidad", "Alarma e inmovilizador de motor"],
    confort: ["Computadora de a bordo", "Limitador de velocidades", "Cámara de visión trasera"],
@@ -157,7 +157,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 144870.00,
   diTotal: 701170.80,
   di2Quotes: 350585.40,
-  image: '/products/31607.png',
+  image: '/products/31607.jpg',
   specs: {
    seguridad: ["Control de estabilidad", "Tercera luz de stop", "Alarma e inmovilizador de motor"],
    confort: ["Llantas aleación", "Computadora de a bordo", "Cierre centralizado de puertas con comando a"],
@@ -189,7 +189,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 144870.00,
   diTotal: 701170.80,
   di2Quotes: 350585.40,
-  image: '/products/30043.png',
+  image: '/products/30043.jpg',
   specs: {
    seguridad: ["Alarma", "Autobloqueo de puertas con velocidad.", "Control de tracción"],
    confort: ["Llantas de aleación", "Computadora de a bordo.", "Cierre de puertas centralizado"],
@@ -208,7 +208,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 148170.00,
   diTotal: 717142.80,
   di2Quotes: 358571.40,
-  image: '/products/19068.png',
+  image: '/products/19068.jpg',
   specs: {
    seguridad: ["Autobloqueo de puertas con velocidad", "Alarma e inmovilizador de motor", "Abs"],
    confort: ["Computadora de a bordo", "Sensores de estacionamiento traseros", "Cámara de visión trasera"],
@@ -227,7 +227,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 148170.00,
   diTotal: 717142.80,
   di2Quotes: 358571.40,
-  image: '/products/27565.png',
+  image: '/products/27565.jpg',
   specs: {
    seguridad: ["Abs", "Tercera luz de stop", "Control de estabilidad"],
    confort: ["Computadora de a bordo", "Sensores de estacionamiento delanteros y traseros", "Cámara de visión trasera"],
@@ -246,7 +246,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 151470.00,
   diTotal: 733114.80,
   di2Quotes: 366557.40,
-  image: '/products/45091.png',
+  image: '/products/45091.jpg',
   specs: {
    seguridad: ["Distribucion electronica de frenado", "Alarma e inmovilizador de motor", "Control de estabilidad"],
    confort: ["Computadora de a bordo", "Alarma de luces encendidas", "Control de velocidad crucero"],
@@ -265,7 +265,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 151800.00,
   diTotal: 734712.00,
   di2Quotes: 367356.00,
-  image: '/products/45101.png',
+  image: '/products/45101.jpg',
   specs: {
    seguridad: ["Tercera luz de stop", "Airbag delanteros", "Anclaje para asientos infantiles"],
    confort: ["Aire acondicionado climatizador", "Alarma de luces encendidas", "Espejos exteriores electricos"],
@@ -284,7 +284,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 153120.00,
   diTotal: 741100.80,
   di2Quotes: 370550.40,
-  image: '/products/37799.png',
+  image: '/products/37799.jpg',
   specs: {
    seguridad: ["Control de estabilidad", "Alarma e inmovilizador de motor"],
    confort: ["Llantas aleación", "Computadora de a bordo"],
@@ -316,7 +316,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 158070.00,
   diTotal: 765058.80,
   di2Quotes: 382529.40,
-  image: '/products/31606.png',
+  image: '/products/31606.jpg',
   specs: {
    seguridad: ["Autobloqueo de puertas con velocidad", "Sensor de lluvia", "Alarma e inmovilizador de motor"],
    confort: ["Computadora de a bordo", "Control de velocidad crucero", "Alarma de luces encendidas"],
@@ -335,7 +335,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 163020.00,
   diTotal: 789016.80,
   di2Quotes: 394508.40,
-  image: '/products/16461.png',
+  image: '/products/16461.jpg',
   specs: {
    seguridad: ["Asistencia en frenada de emergencia", "Alarma e inmovilizador de motor", "Autobloqueo de puertas con velocidad"],
    confort: ["Computadora de a bordo", "Limitador de velocidades", "Encendido de motor con botón"],
@@ -354,7 +354,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 164670.00,
   diTotal: 797002.80,
   di2Quotes: 398501.40,
-  image: '/products/34544.png',
+  image: '/products/34544.jpg',
   specs: {
    seguridad: ["Control de estabilidad", "Alarma e inmovilizador de motor", "Autobloqueo de puertas con velocidad"],
    confort: ["Computadora a bordo", "Llantas de aleación", "Dirección asistida eléctrica progresiva"],
@@ -373,7 +373,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 167970.00,
   diTotal: 812974.80,
   di2Quotes: 406487.40,
-  image: '/products/15666.png',
+  image: '/products/15666.jpg',
   specs: {
    seguridad: ["Alarma e inmovilizador de motor", "Abs"],
    confort: ["Computadora de a bordo", "Techo solar eléctrico"],
@@ -392,7 +392,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 171270.00,
   diTotal: 828946.80,
   di2Quotes: 414473.40,
-  image: '/products/19073.png',
+  image: '/products/19073.jpg',
   specs: {
    seguridad: ["Airbag conductor y acompañante", "Alarma e inmovilizador de motor", "Control de estabilidad"],
    confort: ["Control de velocidad crucero", "Cámara de visión trasera", "Llantas aleación"],
@@ -411,7 +411,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 171270.00,
   diTotal: 828946.80,
   di2Quotes: 414473.40,
-  image: '/products/28006.png',
+  image: '/products/28006.jpg',
   specs: {
    seguridad: ["Abs.", "Airbag conductor y acompañante.", "Alarma e inmovilizador de motor."],
    confort: ["Aire acondicionado.", "Dirección asistida hidráulica.", "Llantas acero con taza."],
@@ -430,7 +430,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 174570.00,
   diTotal: 844918.80,
   di2Quotes: 422459.40,
-  image: '/products/16463.png',
+  image: '/products/16463.jpg',
   specs: {
    seguridad: ["Abs", "Alarma e inmovilizador de motor", "Autobloqueo de puertas con velocidad"],
    confort: ["Aire acondicionado", "Sensores de estacionamiento traseros", "Cierre centralizado de puertas con comando a"],
@@ -462,7 +462,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 184470.00,
   diTotal: 892834.80,
   di2Quotes: 446417.40,
-  image: '/products/31608.png',
+  image: '/products/31608.jpg',
   specs: {
    seguridad: ["Control de estabilidad", "Alarma e inmovilizador de motor", "Tercera luz de stop"],
    confort: ["Cierre centralizado de puertas con comando a distancia", "Computadora de a bordo", "Llantas aleación"],
@@ -481,7 +481,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 187770.00,
   diTotal: 908806.80,
   di2Quotes: 454403.40,
-  image: '/products/19074.png',
+  image: '/products/19074.jpg',
   specs: {
    seguridad: ["Tercera luz de stop", "Abs", "Alarma e inmovilizador de motor"],
    confort: ["Alarma de luces encendidas", "Llantas aleacion"],
@@ -500,7 +500,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 187770.00,
   diTotal: 908806.80,
   di2Quotes: 454403.40,
-  image: '/products/15667.png',
+  image: '/products/15667.jpg',
   specs: {
    seguridad: ["Alarma e inmovilizador de motor", "Abs", "Control de tracción"],
    confort: ["Aire acondicionado", "Cierre centralizado de puertas con comando a distancia", "Computadora de a bordo"],
@@ -519,7 +519,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 191070.00,
   diTotal: 924778.80,
   di2Quotes: 462389.40,
-  image: '/products/19066.png',
+  image: '/products/19066.jpg',
   specs: {
    seguridad: ["Alarma e inmovilizador de motor", "Control de estabilidad"],
    confort: ["Cierre centralizado de puertas con comando a distancia", "Computadora de a bordo", "Cámara de visión trasera"],
@@ -538,7 +538,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 193710.00,
   diTotal: 937556.40,
   di2Quotes: 468778.20,
-  image: '/products/16465.png',
+  image: '/products/16465.jpg',
   specs: {
    seguridad: ["Abs", "Alarma e inmovilizador de motor"],
    confort: ["Computadora de a bordo", "Control de velocidad crucero"],
@@ -557,7 +557,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 194370.00,
   diTotal: 940750.80,
   di2Quotes: 470375.40,
-  image: '/products/34547.png',
+  image: '/products/34547.jpg',
   specs: {
    seguridad: ["Sensor de lluvia", "Abs", "Distribución electrónica de frenado"],
    confort: ["Vidrios del. - tras. Eléctricos", "Cámara de visión trasera", "Sensores de estacionamiento delanteros y"],
@@ -576,7 +576,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 197670.00,
   diTotal: 956722.80,
   di2Quotes: 478361.40,
-  image: '/products/29557.png',
+  image: '/products/29557.jpg',
   specs: {
    seguridad: ["Alarma e inmovilizador de motor", "Sensor de lluvia", "Control de estabilidad"],
    confort: ["Computadora de a bordo", "Cámara de visión periférica", "Llantas aleación"],
@@ -595,7 +595,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 200970.00,
   diTotal: 972694.80,
   di2Quotes: 486347.40,
-  image: '/products/45095.png',
+  image: '/products/45095.jpg',
   specs: {
    seguridad: ["Sensor de lluvia", "Control de estabilidad"],
    confort: ["Computadora de a bordo", "Llantas aleacion"],
@@ -614,7 +614,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 202950.00,
   diTotal: 982278.00,
   di2Quotes: 491139.00,
-  image: '/products/29564.png',
+  image: '/products/29564.jpg',
   specs: {
    seguridad: ["Alarma e inmovilizador de motor", "Encendido automático de balizas", "Control de tracción"],
    confort: ["Cámara de visión trasera", "Computadora de a bordo", "Control de velocidad crucero"],
@@ -633,7 +633,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 210870.00,
   diTotal: 1020610.80,
   di2Quotes: 510305.40,
-  image: '/products/15651.png',
+  image: '/products/15651.jpg',
   specs: {
    seguridad: ["Abs", "Alarma e inmovilizador de motor", "Control de tracción"],
    confort: ["Cierre centralizado de puertas con comando a distancia", "Aire acondicionado"],
@@ -665,7 +665,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 214170.00,
   diTotal: 1036582.80,
   di2Quotes: 518291.40,
-  image: '/products/39527.png',
+  image: '/products/39527.jpg',
   specs: {
    seguridad: ["Distribución electrónica de frenado", "Sensor de lluvia", "Control de tracción"],
    confort: ["Computadora de a bordo", "Alarma de luces encendidas", "Encendido del motor con botón"],
@@ -697,7 +697,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 233970.00,
   diTotal: 1132414.80,
   di2Quotes: 566207.40,
-  image: '/products/45093.png',
+  image: '/products/45093.jpg',
   specs: {
    seguridad: ["Sensor de lluvia", "Abs", "Distribución electrónica de frenado"],
    confort: ["Vidrios del. - tras. Eléctricos", "Cámara de visión trasera", "Sensores de estacionamiento delanteros y traseros"],
@@ -729,7 +729,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 247170.00,
   diTotal: 1196302.80,
   di2Quotes: 598151.40,
-  image: '/products/45103.png',
+  image: '/products/45103.jpg',
   specs: {
    seguridad: ["Indicador de presion de neumaticos", "Autobloqueo de puertas con velocidad", "Control de tracción"],
    confort: ["Tapizados cuero", "Computadora de a bordo", "Camara de vision 360ºhd"],
@@ -761,7 +761,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 263670.00,
   diTotal: 1276162.80,
   di2Quotes: 638081.40,
-  image: '/products/29563.png',
+  image: '/products/29563.jpg',
   specs: {
    seguridad: ["Alarma e inmovilizador de motor", "Tercera luz de stop", "Sensor de lluvia"],
    confort: ["Sensores de estacionamiento traseros", "Computadora de a bordo", "Cierre de puertas centralizado con comando a distancia"],
@@ -793,7 +793,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 276870.00,
   diTotal: 1340050.80,
   di2Quotes: 670025.40,
-  image: '/products/15672.png',
+  image: '/products/15672.jpg',
   specs: {
    seguridad: ["Abs", "Alarma e inmovilizador de motor", "Autobloqueo de puertas con velocidad"],
    confort: ["Encendido de motor con botón", "Control de velocidad crucero", "Computadora de a bordo"],
@@ -812,7 +812,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 323070.00,
   diTotal: 1563658.80,
   di2Quotes: 781829.40,
-  image: '/products/16459.png',
+  image: '/products/16459.jpg',
   specs: {
    seguridad: ["Abs", "Autobloqueo de puertas con velocidad", "Alarma e inmovilizador de motor"],
    confort: ["Computadora de a bordo", "Control de velocidad crucero"],
@@ -831,7 +831,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 346170.00,
   diTotal: 1675462.80,
   di2Quotes: 837731.40,
-  image: '/products/29560.png',
+  image: '/products/29560.jpg',
   specs: {
    seguridad: ["Abs", "Alarma e inmovilizador de motor", "Control de tracción"],
    confort: ["Cierre centralizado de puertas con comando a distancia", "Control de velocidad crucero"],
@@ -850,7 +850,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 378840.00,
   diTotal: 1833585.60,
   di2Quotes: 916792.80,
-  image: '/products/45105.png',
+  image: '/products/45105.jpg',
   specs: {
    seguridad: ["Distribución electrónica de frenado", "Airbag conductor y acompañante", "Control de tracción"],
    confort: ["Camara de vision trasera", "Puertas trasera derecha corrediza", "Espejos exteriores electricos y termicos"],
@@ -886,7 +886,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 270270.00,
   diTotal: 1308106.80,
   di2Quotes: 654053.40,
-  image: '/products/45097.png',
+  image: '/products/45097.jpg',
   specs: {
    seguridad: ["Sistema de alerta por cansancio", "Control de estabilidad"],
    confort: ["Cierre de puertas centralizado con comando a distancia"],
@@ -905,7 +905,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 485100.00,
   diTotal: 2347884.00,
   di2Quotes: 1173942.00,
-  image: '/products/45099.png',
+  image: '/products/45099.jpg',
   specs: {
    seguridad: ["Abs, ebd, asr, esp, hsa", "Suspension de cabina mecanica"],
    confort: ["Aire acondicionado", "Cierre de cabina centralizado con comando a distancia", "Espejos ambos con ajustes electricos"],
@@ -924,7 +924,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 488070.00,
   diTotal: 2362258.80,
   di2Quotes: 1181129.40,
-  image: '/products/30040.png',
+  image: '/products/30040.jpg',
   term: 300
  },
 
@@ -942,7 +942,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 53757.00,
   diTotal: 260183.88,
   di2Quotes: 130091.94,
-  image: '/products/16355.png',
+  image: '/products/16355.jpg',
   term: 300
  },
  {
@@ -956,7 +956,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 55770.00,
   diTotal: 269926.80,
   di2Quotes: 134963.40,
-  image: '/products/23949.png',
+  image: '/products/23949.jpg',
   term: 300
  },
  {
@@ -983,7 +983,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 67155.00,
   diTotal: 325030.20,
   di2Quotes: 162515.10,
-  image: '/products/16357.png',
+  image: '/products/16357.jpg',
   term: 300
  },
  {
@@ -997,7 +997,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 85470.00,
   diTotal: 413674.80,
   di2Quotes: 206837.40,
-  image: '/products/45113.png',
+  image: '/products/45113.jpg',
   term: 300
  },
  {
@@ -1011,7 +1011,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 95370.00,
   diTotal: 461590.80,
   di2Quotes: 230795.40,
-  image: '/products/45111.png',
+  image: '/products/45111.jpg',
   term: 300
  },
  {
@@ -1025,7 +1025,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 95370.00,
   diTotal: 461590.80,
   di2Quotes: 230795.40,
-  image: '/products/45109.png',
+  image: '/products/45109.jpg',
   term: 300
  },
  {
@@ -1039,7 +1039,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 98670.00,
   diTotal: 477562.80,
   di2Quotes: 238781.40,
-  image: '/products/45107.png',
+  image: '/products/45107.jpg',
   term: 300
  },
  {
@@ -1053,7 +1053,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 117645.00,
   diTotal: 569401.80,
   di2Quotes: 284700.90,
-  image: '/products/39526.png',
+  image: '/products/39526.jpg',
   term: 300
  },
 
@@ -1456,7 +1456,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 61446.00,
   diTotal: 297398.64,
   di2Quotes: 148699.32,
-  image: '/products/16358.png',
+  image: '/products/16358.jpg',
   packIncludes: ["Heladera", "Lavasecarropas", "Smart Tv 40", "Smart Tv 65", "Split 3350 W F/C", "Termotanque 75 Litros", "Calefactor Tb-3000 Calorías", "Microondas", "Colchon + Sommier 140x190", "Cocina"],
   term: 300
  },
@@ -1471,7 +1471,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
   quote8onwards: 76131.00,
   diTotal: 368474.04,
   di2Quotes: 184237.02,
-  image: '/products/16359.png',
+  image: '/products/16359.jpg',
   packIncludes: ["Heladera", "Lavasecarropas", "Smart Tv 40", "Smart Tv 65", "Split 3350 W F/C", "Split 5100 W F/C", "Termotanque 75 Litros", "Calefactor Tb-3000 Calorías", "Microondas", "Colchon + Sommier 140x190", "Cocina", "Parlante", "Notebook", "Play Station 5"],
   term: 300
  }
