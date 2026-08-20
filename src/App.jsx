@@ -45,6 +45,16 @@ export default function App() {
     if (legacyMap[activeTab]) setActiveTab(legacyMap[activeTab]);
   }, []);
 
+  // TEMPORAL: escape si quedaste atrapado en pantalla negra de medallas — triple tap en header, o botón flotante
+  useEffect(() => {
+    window.__RESET_APP = () => {
+      localStorage.removeItem('autocredito_active_tab');
+      localStorage.removeItem('autocredito_activities_subtab');
+      localStorage.removeItem('autocredito_knowledge_subtab');
+      window.location.reload();
+    };
+  }, []);
+
   const loadCurrentUser = () => {
     setCurrentUser(getCurrentUserProfile());
   };
@@ -108,6 +118,29 @@ export default function App() {
         profile={currentProfile}
         onRestartSession={() => setIsFeedbackOpen(false)}
       />
+
+      {/* Botón de escape temporal — visible siempre mientras se valida el fix de medallas */}
+      <button
+        onClick={() => window.__RESET_APP && window.__RESET_APP()}
+        title="Salir de pantalla negra / recargar y volver a inicio (temporal)"
+        style={{
+          position: 'fixed',
+          bottom: '16px',
+          right: '16px',
+          zIndex: 9999,
+          background: 'var(--primary)',
+          color: '#000',
+          border: 'none',
+          borderRadius: '999px',
+          padding: '10px 16px',
+          fontWeight: 800,
+          fontSize: '0.8rem',
+          boxShadow: '0 6px 20px rgba(0,0,0,0.4)',
+          cursor: 'pointer'
+        }}
+      >
+        ↺ Salir / Recargar
+      </button>
 
       {/* Footer */}
       <footer style={{

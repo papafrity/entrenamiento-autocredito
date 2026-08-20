@@ -98,12 +98,12 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
     loadData();
   };
 
-  // Ordenar miembros por puntos descendentes
+  // Ordenar miembros por puntos descendentes — activeUser debe ir primero (evita TDZ)
+  const activeUser = userProfile || (team.length > 0 ? team[0] : null);
   const baseTeam = branchFilter === 'mine' && activeUser?.branch
     ? team.filter(m => m.branch === activeUser.branch)
     : team;
   const sortedTeam = [...baseTeam].sort((a, b) => b.points - a.points);
-  const activeUser = userProfile || (team.length > 0 ? team[0] : null);
   const branchTeam = activeUser?.branch ? team.filter(m => m.branch === activeUser.branch) : [];
   const argentinaTeam = [...team].sort((a,b)=>b.points-a.points);
 
