@@ -131,8 +131,7 @@ export const OFFICIAL_AUTOCREDITO_PLANS = [
     quote8onwards: 144870.00,
     diTotal: 701170.80,
     di2Quotes: 350585.40,
-    term: 300,
-    image: '/products/31607.png'
+    term: 300
   },
   {
     code: '19068',
