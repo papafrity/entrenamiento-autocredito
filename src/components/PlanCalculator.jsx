@@ -11,6 +11,7 @@ export default function PlanCalculator() {
   const [searchFilter, setSearchFilter] = useState('');
   const [sortBy, setSortBy] = useState('default'); // 'default', 'price_desc', 'price_asc', 'quote_desc', 'quote_asc'
   const [isVisualCardOpen, setIsVisualCardOpen] = useState(false);
+  const [isCardExpanded, setIsCardExpanded] = useState(true);
 
   // Estado para modo personalizado libre
   const [customCapital, setCustomCapital] = useState(43900000);
@@ -286,7 +287,7 @@ export default function PlanCalculator() {
                 return (
                   <div
                     key={plan.code}
-                    onClick={() => setSelectedPlanCode(plan.code)}
+                    onClick={() => { setSelectedPlanCode(plan.code); setIsCardExpanded(true); }}
                     style={{
                       padding: '10px 12px',
                       borderRadius: 'var(--radius-sm)',
@@ -331,16 +332,23 @@ export default function PlanCalculator() {
               })}
             </div>
 
-            {/* Right: Detailed Plan Card with WhatsApp Action */}
+            {/* Right: Detailed Plan Card — collapsible */}
             <div className="glass-card" style={{
-              padding: '24px',
+              padding: isCardExpanded ? '24px' : '14px 24px',
               border: '2px solid var(--primary)',
               background: 'linear-gradient(180deg, rgba(255, 159, 28, 0.12) 0%, rgba(18, 25, 41, 0.95) 100%)',
               boxShadow: '0 0 25px rgba(255, 159, 28, 0.18)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '14px'
+              gap: isCardExpanded ? '14px' : '0',
+              overflow: 'hidden'
             }}>
+              <div onClick={() => setIsCardExpanded(!isCardExpanded)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>{isCardExpanded ? '📋 Detalle del plan' : `👁️ Ver detalle: ${selectedPlan.name.slice(0,30)}`}</span>
+                <span style={{ color: 'var(--primary)', transform: isCardExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg></span>
+              </div>
+              {isCardExpanded && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {selectedPlan.image && (
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
                   <img
@@ -372,14 +380,14 @@ export default function PlanCalculator() {
                 </div>
               </div>
 
-              {/* Exact Quotes Breakdown Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {/* Exact Quotes Breakdown Grid — responsive */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px' }}>
                 
                 <div style={{ background: 'rgba(0,0,0,0.3)', padding: '14px', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--primary)' }}>
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                     Cuotas 1 a 7:
                   </span>
-                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--primary)', marginTop: '2px' }}>
+                  <div style={{ fontSize: 'clamp(1.05rem, 3.5vw, 1.35rem)', fontWeight: 800, color: 'var(--primary)', marginTop: '2px', overflowWrap: 'anywhere', minWidth: 0 }}>
                     {formatMoney(selectedPlan.quote1to7)}
                   </div>
                   <p style={{ fontSize: '0.68rem', color: 'var(--text-dim)', marginTop: '2px' }}>
@@ -391,7 +399,7 @@ export default function PlanCalculator() {
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                     Cuotas 8 en adelante:
                   </span>
-                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--accent-green)', marginTop: '2px' }}>
+                  <div style={{ fontSize: 'clamp(1.05rem, 3.5vw, 1.35rem)', fontWeight: 800, color: 'var(--accent-green)', marginTop: '2px', overflowWrap: 'anywhere', minWidth: 0 }}>
                     {formatMoney(selectedPlan.quote8onwards)}
                   </div>
                   <p style={{ fontSize: '0.68rem', color: 'var(--text-dim)', marginTop: '2px' }}>
@@ -402,7 +410,7 @@ export default function PlanCalculator() {
               </div>
 
               {/* Suscripción & Derecho de Ingreso Breakdown */}
-              <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px', borderRadius: 'var(--radius-sm)', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', fontSize: '0.8rem' }}>
+              <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px', borderRadius: 'var(--radius-sm)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px', fontSize: '0.8rem' }}>
                 <div>
                   <span style={{ color: 'var(--primary)', fontWeight: 700, display: 'block', fontSize: '0.72rem', textTransform: 'uppercase' }}>
                     📝 Suscripción:
@@ -459,6 +467,8 @@ export default function PlanCalculator() {
                   <Send size={18} /> Mandar Cotización en Texto a WhatsApp
                 </button>
               </div>
+              </div>
+              )}
 
             </div>
 

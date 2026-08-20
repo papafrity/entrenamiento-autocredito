@@ -6,13 +6,15 @@ const FIREBASE_CONFIG_KEY = 'autocredito_firebase_config';
 const _fbk = 'QUl6YVN5Q3piSDZZOUVrUm5PdGdqYlNyLVdJcGNLeGhhRkluWnJz';
 
 // Configuración por defecto de Firebase proporcionada para el equipo
+// NOTA: Si appId/messagingSenderId están vacíos, Firestore queda offline y cada celular ve sólo su localStorage.
+// Para activar tiempo real, completar estos campos desde Firebase Console > Project settings > SDK.
 const DEFAULT_FIREBASE_CONFIG = {
   apiKey: typeof atob !== 'undefined' ? atob(_fbk) : '',
   projectId: "entrenador-autocredito",
   authDomain: "entrenador-autocredito.firebaseapp.com",
   storageBucket: "entrenador-autocredito.appspot.com",
-  messagingSenderId: "",
-  appId: ""
+  messagingSenderId: "0",
+  appId: "1:0:web:placeholder"
 };
 
 /**

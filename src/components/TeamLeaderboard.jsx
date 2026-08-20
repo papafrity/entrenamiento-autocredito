@@ -15,15 +15,21 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editRow, setEditRow] = useState({ name: '', branch: '', role: 'PAI', avatar: '👨‍💼' });
+  const [saveMsg, setSaveMsg] = useState('');
+  const [expandedMember, setExpandedMember] = useState(null);
+  const [branchFilter, setBranchFilter] = useState('mine'); // mine | all
 
   const avatarsList = ['👨‍💼', '👩‍💼', '🧑‍💻', '👨‍🔧', '👩‍💻', '🤵', '🦸‍♂️', '🏎️'];
 
   useEffect(() => {
     loadData();
-    syncFromCloud(); // Sincroniza al entrar
+    syncFromCloud();
     const unsubscribe = subscribeToRealtimeUpdates((event) => {
       if (event.type === 'TEAM_UPDATED') {
         setTeam(event.payload);
+        // refrescar activeUser también
+        const prof = event.payload.find(m => m.id === getCurrentUserProfile()?.id) || event.payload[0];
+        if (prof) setUserProfile(prof);
       }
     });
     return () => unsubscribe();
@@ -57,17 +63,23 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
   const handleSaveProfile = async (e) => {
     e?.preventDefault();
     if (!userProfile) return;
-    const updated = {
-      ...userProfile,
-      name: editName.trim() || 'Mi Asesor',
-      branch: editBranch.trim() || 'Sucursal Central',
-      role: editRole,
-      avatar: editAvatar
-    };
-    await updateCurrentUserProfile(updated);
-    setUserProfile(updated);
-    setIsEditingProfile(false);
-    loadData();
+    if (!editName.trim()) { setSaveMsg('❌ El nombre no puede estar vacío'); setTimeout(()=>setSaveMsg(''),2500); return; }
+    try {
+      const updated = {
+        ...userProfile,
+        name: editName.trim(),
+        branch: editBranch.trim() || 'Sucursal Central',
+        role: editRole,
+        avatar: editAvatar
+      };
+      await updateCurrentUserProfile(updated);
+      setUserProfile(updated);
+      setSaveMsg('✅ Perfil guardado correctamente');
+      setTimeout(()=>{ setSaveMsg(''); setIsEditingProfile(false); loadData(); }, 1200);
+    } catch(err){
+      setSaveMsg('❌ '+err.message);
+      setTimeout(()=>setSaveMsg(''),2500);
+    }
   };
 
   const handleDeleteRow = async (id, name) => {
@@ -87,8 +99,13 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
   };
 
   // Ordenar miembros por puntos descendentes
-  const sortedTeam = [...team].sort((a, b) => b.points - a.points);
+  const baseTeam = branchFilter === 'mine' && activeUser?.branch
+    ? team.filter(m => m.branch === activeUser.branch)
+    : team;
+  const sortedTeam = [...baseTeam].sort((a, b) => b.points - a.points);
   const activeUser = userProfile || (team.length > 0 ? team[0] : null);
+  const branchTeam = activeUser?.branch ? team.filter(m => m.branch === activeUser.branch) : [];
+  const argentinaTeam = [...team].sort((a,b)=>b.points-a.points);
 
   return (
     <div style={{ padding: '0 12px 30px 12px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
@@ -166,7 +183,7 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
 
         {/* Profile Edit Form */}
         {isEditingProfile && activeUser && (
-          <form onSubmit={handleSaveProfile} style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', alignItems: 'flex-end' }}>
+          <form onSubmit={handleSaveProfile} style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px', alignItems: 'flex-end' }}>
             <div>
               <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Nombre del Asesor:</label>
               <input
@@ -221,6 +238,7 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
             <button type="submit" className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
               <Check size={16} /> Guardar
             </button>
+            {saveMsg && <div style={{ gridColumn: '1 / -1', padding: '8px 12px', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700, background: saveMsg.startsWith('✅') ? 'rgba(46,196,182,0.12)' : 'rgba(230,57,70,0.12)', border: saveMsg.startsWith('✅') ? '1px solid rgba(46,196,182,0.3)' : '1px solid rgba(230,57,70,0.3)', color: saveMsg.startsWith('✅') ? 'var(--accent-green)' : 'var(--accent-red)' }}>{saveMsg}</div>}
           </form>
         )}
       </div>
@@ -229,11 +247,17 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
         
         {/* Left Column: Leaderboard Ranking */}
         <div className="glass-panel" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-            <Trophy size={22} color="var(--primary)" />
-            <div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }}>Ranking del Equipo ({team.length} asesores)</h3>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Puntos por ventas simuladas, objeciones y visitas</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Trophy size={22} color="var(--primary)" />
+              <div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }}>Ranking ({sortedTeam.length} asesores)</h3>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{branchFilter==='mine' ? `Sucursal: ${activeUser?.branch || '-'}` : 'Toda Argentina'} • Puntos y medallas</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.3)', padding: '3px', borderRadius: 'var(--radius-sm)' }}>
+              <button onClick={()=>setBranchFilter('mine')} className={branchFilter==='mine'?'btn-primary':'btn-secondary'} style={{ fontSize:'0.72rem', padding:'5px 10px' }}>Mi sucursal ({branchTeam.length})</button>
+              <button onClick={()=>setBranchFilter('all')} className={branchFilter==='all'?'btn-primary':'btn-secondary'} style={{ fontSize:'0.72rem', padding:'5px 10px' }}>Argentina ({team.length})</button>
             </div>
           </div>
 
@@ -280,6 +304,8 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
                     </div>
                   );
                 }
+                const memberBadges = BADGES_CATALOG.filter(b=>member.unlockedBadges?.includes(b.id));
+                const isExpanded = expandedMember === member.id;
                 return (
                   <div
                     key={member.id}
@@ -289,65 +315,64 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
                       background: isCurrent ? 'rgba(255, 159, 28, 0.15)' : 'rgba(255,255,255,0.03)',
                       border: isCurrent ? '1px solid var(--primary)' : '1px solid var(--border-color)',
                       display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap:'8px'
+                      flexDirection: 'column',
+                      gap: isExpanded ? '10px' : 0
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex:1, minWidth:0 }}>
-                      <div style={{
-                        width: '28px',
-                        height: '28px',
-                        borderRadius: '50%',
-                        background: isFirst ? 'var(--primary)' : isSecond ? '#94a3b8' : isThird ? '#cd7f32' : 'rgba(255,255,255,0.1)',
-                        color: isFirst || isSecond || isThird ? '#000' : 'var(--text-muted)',
-                        fontWeight: 800,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.85rem',
-                        flexShrink:0
-                      }}>
-                        {index + 1}
-                      </div>
-
-                      <span style={{ fontSize: '1.4rem' }}>{member.avatar}</span>
-
-                      <div style={{ minWidth:0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap:'wrap' }}>
-                          <span style={{ fontWeight: 700, fontSize: '0.92rem' }}>
-                            {member.name}
-                          </span>
-                          <span style={{
-                            fontSize: '0.62rem',
-                            fontWeight: 800,
-                            padding: '1px 5px',
-                            borderRadius: '4px',
-                            background: member.role === 'PAOI' ? 'rgba(255, 159, 28, 0.25)' : 'rgba(46, 196, 182, 0.2)',
-                            color: member.role === 'PAOI' ? 'var(--primary)' : 'var(--accent-green)'
-                          }}>
-                            {member.role || 'PAI'}
-                          </span>
-                          {isCurrent && <span style={{ color: 'var(--primary)', fontSize: '0.72rem', fontWeight: 600 }}>(Tú)</span>}
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:'8px' }}>
+                      <div onClick={()=>setExpandedMember(isExpanded?null:member.id)} style={{ display: 'flex', alignItems: 'center', gap: '12px', flex:1, minWidth:0, cursor:'pointer' }}>
+                        <div style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '50%',
+                          background: isFirst ? 'var(--primary)' : isSecond ? '#94a3b8' : isThird ? '#cd7f32' : 'rgba(255,255,255,0.1)',
+                          color: isFirst || isSecond || isThird ? '#000' : 'var(--text-muted)',
+                          fontWeight: 800,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.85rem',
+                          flexShrink:0
+                        }}>
+                          {index + 1}
                         </div>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                          {member.branch} • {member.simulationsCompleted || 0} simulaciones
-                        </span>
+                        <span style={{ fontSize: '1.4rem' }}>{member.avatar}</span>
+                        <div style={{ minWidth:0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap:'wrap' }}>
+                            <span style={{ fontWeight: 700, fontSize: '0.92rem' }}>{member.name}</span>
+                            <span style={{ fontSize: '0.62rem', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', background: member.role === 'PAOI' ? 'rgba(255, 159, 28, 0.25)' : 'rgba(46, 196, 182, 0.2)', color: member.role === 'PAOI' ? 'var(--primary)' : 'var(--accent-green)' }}>{member.role || 'PAI'}</span>
+                            {isCurrent && <span style={{ color: 'var(--primary)', fontSize: '0.72rem', fontWeight: 600 }}>(Tú)</span>}
+                          </div>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{member.branch} • {member.simulationsCompleted || 0} sims • {memberBadges.length} medallas</span>
+                        </div>
+                      </div>
+                      <div style={{ display:'flex', alignItems:'center', gap:'6px', flexShrink:0 }}>
+                        <div style={{ textAlign: 'right' }}>
+                          <strong style={{ fontSize: '1.05rem', color: 'var(--primary)' }}>{member.points}</strong>
+                          <p style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>pts</p>
+                        </div>
+                        {memberBadges.length>0 && <span style={{ fontSize:'0.85rem' }}>{memberBadges[0].icon}</span>}
+                        {canManage && (
+                          <button type="button" onClick={()=>handleEditRow(member)} title="Editar" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid var(--border-color)', borderRadius:'6px', padding:'5px', cursor:'pointer', color:'var(--text-muted)' }}><Pencil size={12}/></button>
+                        )}
+                        {canManage && team.length>1 && (
+                          <button type="button" onClick={()=>handleDeleteRow(member.id, member.name)} title="Borrar" style={{ background:'rgba(230,57,70,0.12)', border:'1px solid rgba(230,57,70,0.3)', borderRadius:'6px', padding:'5px', cursor:'pointer', color:'var(--accent-red)' }}><Trash2 size={12}/></button>
+                        )}
                       </div>
                     </div>
-
-                    <div style={{ display:'flex', alignItems:'center', gap:'6px', flexShrink:0 }}>
-                      <div style={{ textAlign: 'right' }}>
-                        <strong style={{ fontSize: '1.05rem', color: 'var(--primary)' }}>{member.points}</strong>
-                        <p style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>pts</p>
+                    {isExpanded && (
+                      <div style={{ paddingTop:'10px', borderTop:'1px solid var(--border-color)', display:'flex', flexDirection:'column', gap:'8px' }}>
+                        <span style={{ fontSize:'0.7rem', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase' }}>Medallas de {member.name.split(' ')[0]} ({memberBadges.length}):</span>
+                        {memberBadges.length===0 ? <span style={{ fontSize:'0.78rem', color:'var(--text-dim)' }}>Aún sin medallas — ¡a entrenar!</span> : (
+                          <div style={{ display:'flex', flexWrap:'wrap', gap:'6px' }}>
+                            {memberBadges.map(b=>(
+                              <span key={b.id} title={b.title+': '+b.description} style={{ display:'inline-flex', alignItems:'center', gap:'4px', padding:'4px 8px', borderRadius:'20px', background:'rgba(46,196,182,0.12)', border:'1px solid rgba(46,196,182,0.3)', fontSize:'0.72rem', color:'var(--accent-green)' }}>{b.icon} {b.title}</span>
+                            ))}
+                          </div>
+                        )}
+                        <div style={{ fontSize:'0.72rem', color:'var(--text-dim)' }}>Provincia: {member.provincia || '-'} • Tel: {member.phone || '-'}</div>
                       </div>
-                      {canManage && (
-                        <button type="button" onClick={()=>handleEditRow(member)} title="Editar" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid var(--border-color)', borderRadius:'6px', padding:'5px', cursor:'pointer', color:'var(--text-muted)' }}><Pencil size={12}/></button>
-                      )}
-                      {canManage && team.length>1 && (
-                        <button type="button" onClick={()=>handleDeleteRow(member.id, member.name)} title="Borrar" style={{ background:'rgba(230,57,70,0.12)', border:'1px solid rgba(230,57,70,0.3)', borderRadius:'6px', padding:'5px', cursor:'pointer', color:'var(--accent-red)' }}><Trash2 size={12}/></button>
-                      )}
-                    </div>
+                    )}
                   </div>
                 );
               })
@@ -355,47 +380,76 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
           </div>
         </div>
 
-        {/* Right Column: Badges Wall */}
-        <div className="glass-panel" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-            <Award size={22} color="var(--secondary)" />
-            <div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }}>Muro de Insignias y Logros</h3>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Desbloqueá medallas practicando y agendando salidas</p>
+        {/* Right Column: Two walls — Mi sucursal / Argentina */}
+        <div style={{ display:'flex', flexDirection:'column', gap:'20px' }}>
+          {/* Muro Sucursal */}
+          <div className="glass-panel" style={{ padding: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+              <Award size={20} color="var(--primary)" />
+              <div>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800 }}>Muro Sucursal — {activeUser?.branch || 'Mi sucursal'}</h3>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{branchTeam.length} asesores • Méritos de tu equipo local</p>
+              </div>
+            </div>
+            {branchTeam.length===0 ? <p style={{ fontSize:'0.82rem', color:'var(--text-dim)', textAlign:'center', padding:'16px' }}>Sin compañeros en esta sucursal aún</p> : (
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(130px,1fr))', gap:'8px' }}>
+                {branchTeam.sort((a,b)=>b.points-a.points).map(m=>(
+                  <div key={m.id} style={{ padding:'10px', borderRadius:'var(--radius-sm)', background: m.id===activeUser?.id?'rgba(255,159,28,0.12)':'rgba(255,255,255,0.03)', border: m.id===activeUser?.id?'1px solid var(--primary)':'1px solid var(--border-color)', textAlign:'center' }}>
+                    <div style={{ fontSize:'1.4rem' }}>{m.avatar}</div>
+                    <strong style={{ fontSize:'0.78rem', display:'block', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{m.name.split(' ')[0]}</strong>
+                    <span style={{ fontSize:'0.7rem', color:'var(--primary)', fontWeight:700 }}>{m.points} pts</span>
+                    <div style={{ display:'flex', gap:'3px', justifyContent:'center', marginTop:'4px', flexWrap:'wrap' }}>
+                      {(m.unlockedBadges||[]).slice(0,4).map(bid=>{
+                        const b=BADGES_CATALOG.find(x=>x.id===bid);
+                        return b? <span key={bid} title={b.title} style={{ fontSize:'0.9rem' }}>{b.icon}</span>:null;
+                      })}
+                      {(m.unlockedBadges||[]).length>4 && <span style={{ fontSize:'0.65rem', color:'var(--text-dim)' }}>+{m.unlockedBadges.length-4}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* Muro Argentina */}
+          <div className="glass-panel" style={{ padding: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+              <Trophy size={20} color="var(--secondary)" />
+              <div>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800 }}>Muro Argentina — Todos</h3>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{team.length} asesores • Ranking nacional</p>
+              </div>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(130px,1fr))', gap:'8px' }}>
+              {argentinaTeam.slice(0,12).map(m=>(
+                <div key={m.id} style={{ padding:'10px', borderRadius:'var(--radius-sm)', background: m.id===activeUser?.id?'rgba(0,180,216,0.1)':'rgba(255,255,255,0.03)', border: m.id===activeUser?.id?'1px solid var(--secondary)':'1px solid var(--border-color)', textAlign:'center' }}>
+                  <div style={{ fontSize:'1.3rem' }}>{m.avatar}</div>
+                  <strong style={{ fontSize:'0.74rem', display:'block', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{m.name.split(' ')[0]} — {m.branch?.slice(0,12)}</strong>
+                  <span style={{ fontSize:'0.7rem', color:'var(--secondary)', fontWeight:700 }}>{m.points} pts</span>
+                </div>
+              ))}
             </div>
           </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: '10px' }}>
-            {BADGES_CATALOG.map(badge => {
-              const isUnlocked = activeUser?.unlockedBadges?.includes(badge.id);
-              return (
-                <div
-                  key={badge.id}
-                  style={{
-                    padding: '12px 10px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: isUnlocked ? 'rgba(46, 196, 182, 0.1)' : 'rgba(0, 0, 0, 0.3)',
-                    border: isUnlocked ? '1px solid rgba(46, 196, 182, 0.4)' : '1px solid rgba(255,255,255,0.05)',
-                    textAlign: 'center',
-                    opacity: isUnlocked ? 1 : 0.45,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                >
-                  <span style={{ fontSize: '1.8rem', filter: isUnlocked ? 'none' : 'grayscale(100%)' }}>
-                    {badge.icon}
-                  </span>
-                  <strong style={{ fontSize: '0.8rem', color: isUnlocked ? 'var(--accent-green)' : 'var(--text-muted)' }}>
-                    {badge.title}
-                  </strong>
-                  <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', lineHeight: 1.2 }}>
-                    {badge.description}
-                  </p>
-                </div>
-              );
-            })}
+          {/* Mis medallas detallado */}
+          <div className="glass-panel" style={{ padding: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+              <Star size={20} color="var(--accent-green)" />
+              <div>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800 }}>Mis Insignias</h3>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{activeUser?.unlockedBadges?.length||0} desbloqueadas</p>
+              </div>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(135px,1fr))', gap:'10px' }}>
+              {BADGES_CATALOG.map(badge => {
+                const isUnlocked = activeUser?.unlockedBadges?.includes(badge.id);
+                return (
+                  <div key={badge.id} style={{ padding:'12px 10px', borderRadius:'var(--radius-sm)', background: isUnlocked ? 'rgba(46,196,182,0.1)' : 'rgba(0,0,0,0.3)', border: isUnlocked?'1px solid rgba(46,196,182,0.4)':'1px solid rgba(255,255,255,0.05)', textAlign:'center', opacity: isUnlocked?1:0.45, display:'flex', flexDirection:'column', alignItems:'center', gap:'4px' }}>
+                    <span style={{ fontSize:'1.8rem', filter: isUnlocked?'none':'grayscale(100%)' }}>{badge.icon}</span>
+                    <strong style={{ fontSize:'0.8rem', color: isUnlocked?'var(--accent-green)':'var(--text-muted)' }}>{badge.title}</strong>
+                    <p style={{ fontSize:'0.7rem', color:'var(--text-dim)', lineHeight:1.2 }}>{badge.description}</p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
