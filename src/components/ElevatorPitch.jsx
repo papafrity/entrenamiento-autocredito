@@ -56,6 +56,7 @@ export default function ElevatorPitch({ onPointsAwarded }) {
   const [evaluation, setEvaluation] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [history, setHistory] = useState(getPitchHistory());
+  const [hasSpeech, setHasSpeech] = useState(false);
 
   const timerRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -63,26 +64,42 @@ export default function ElevatorPitch({ onPointsAwarded }) {
   // Inicializar Web Speech Recognition
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    setHasSpeech(!!SpeechRecognition);
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'es-AR';
 
+      recognition.onstart = () => setIsRecording(true);
+      recognition.onend = () => setIsRecording(false);
       recognition.onresult = (event) => {
         let transcript = '';
-        for (let i = 0; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript + ' ';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal || event.results[i][0].transcript) {
+            transcript += event.results[i][0].transcript + ' ';
+          }
         }
-        setPitchText(transcript);
+        if (transcript.trim()) {
+          setPitchText(prev => {
+            // evitar duplicar si ya contiene el texto
+            const combined = (prev + ' ' + transcript).trim().replace(/\s+/g, ' ');
+            return combined;
+          });
+        }
       };
 
       recognition.onerror = (event) => {
         console.error('Pitch recognition error:', event.error);
+        setIsRecording(false);
         if (event.error === 'not-allowed') {
           setErrorMsg('Habilitá el permiso de micrófono en tu navegador para grabar por voz.');
+        } else if (event.error === 'no-speech') {
+          setErrorMsg('No se detectó voz. Probá hablar más cerca del micrófono.');
         }
       };
+
+      recognition.onend = () => setIsRecording(false);
 
       recognitionRef.current = recognition;
     }
@@ -106,26 +123,40 @@ export default function ElevatorPitch({ onPointsAwarded }) {
     return () => clearInterval(timerRef.current);
   }, [isRunning, timerSeconds]);
 
+  const toggleMic = () => {
+    if (!recognitionRef.current) {
+      setErrorMsg('Tu navegador no soporta voz (probá en Chrome). Podés escribir tu pitch manualmente.');
+      return;
+    }
+    if (isRecording) {
+      try { recognitionRef.current.stop(); } catch {}
+      setIsRecording(false);
+    } else {
+      setErrorMsg('');
+      try { recognitionRef.current.start(); } catch (err) { console.warn(err); }
+    }
+  };
+
   const handleStart = () => {
     setErrorMsg('');
     setEvaluation(null);
     setTimerSeconds(60);
     setPitchText('');
     setIsRunning(true);
-    setIsRecording(true);
-
+    // auto-iniciar mic si hay soporte
     if (recognitionRef.current) {
       try {
         recognitionRef.current.start();
       } catch (err) {
         console.warn('Recognition already started or error:', err);
       }
+    } else if (!hasSpeech) {
+      setErrorMsg('Tu navegador no soporta dictado por voz. Escribí tu pitch manualmente.');
     }
   };
 
   const handleStop = () => {
     setIsRunning(false);
-    setIsRecording(false);
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
@@ -133,6 +164,7 @@ export default function ElevatorPitch({ onPointsAwarded }) {
         console.warn('Recognition stop error:', err);
       }
     }
+    setIsRecording(false);
   };
 
   const handleReset = () => {
@@ -319,7 +351,7 @@ export default function ElevatorPitch({ onPointsAwarded }) {
             </div>
 
             {/* Controls Bar */}
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
               {!isRunning ? (
                 <button
                   onClick={handleStart}
@@ -337,6 +369,17 @@ export default function ElevatorPitch({ onPointsAwarded }) {
                   <Square size={16} /> Detener
                 </button>
               )}
+
+              <button
+                onClick={toggleMic}
+                className={isRecording ? 'btn-mic btn-mic-recording' : 'btn-mic btn-mic-idle'}
+                style={{ width: '46px', height: '46px', flexShrink: 0 }}
+                title={isRecording ? 'Detener micrófono' : 'Hablar por micrófono'}
+                type="button"
+              >
+                {isRecording ? <Mic size={20} /> : <MicOff size={18} />}
+              </button>
+              <span style={{ fontSize: '0.72rem', color: isRecording ? 'var(--accent-red)' : 'var(--text-dim)', fontWeight: 600 }}>{isRecording ? '● Grabando...' : hasSpeech ? 'Mic listo' : 'Sin voz'}</span>
 
               <button
                 onClick={handleReset}
@@ -501,7 +544,7 @@ export default function ElevatorPitch({ onPointsAwarded }) {
                 Poné a prueba tu velocidad comercial
               </h3>
               <p style={{ fontSize: '0.82rem', marginTop: '6px', maxWidth: '340px', lineHeight: 1.5 }}>
-                Elegí un desafío a la izquierda, presioná <strong>"Iniciar Pitch"</strong> y grabá tu argumento en menos de 60 segundos. La IA te dará una devolución con puntuación.
+                Elegí un desafío arriba<span className="mobile-hide"> a la izquierda</span>, presioná <strong>"Iniciar Pitch"</strong> o el <strong>micrófono 🎙️</strong> y grabá tu argumento en menos de 60s. La IA te dará una devolución con puntuación.
               </p>
             </div>
           )}

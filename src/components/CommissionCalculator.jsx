@@ -150,7 +150,7 @@ export default function CommissionCalculator() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', overflow: 'hidden' }}>
         
         {/* Left Column: Input Form */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -245,23 +245,26 @@ export default function CommissionCalculator() {
             </div>
           ) : (
             /* Modo Planes Vendidos Específicos */
-            <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', minWidth: 0, overflow: 'hidden' }}>
               <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
                 Agregar Planes Vendidos a tu Lista:
               </span>
 
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', minWidth: 0 }}>
                 <select
                   value={selectedPlanToAdd}
                   onChange={e => setSelectedPlanToAdd(e.target.value)}
                   style={{
                     flex: 1,
+                    minWidth: 0,
                     padding: '10px 12px',
                     background: 'var(--bg-input)',
                     border: '1px solid var(--border-color)',
                     borderRadius: 'var(--radius-sm)',
                     color: 'var(--text-main)',
-                    fontSize: '0.84rem'
+                    fontSize: '0.84rem',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
                   }}
                 >
                   {OFFICIAL_AUTOCREDITO_PLANS.map(p => (

@@ -362,7 +362,10 @@ export default function TeamLeaderboard({ onOpenAuthModal }) {
                     </div>
                     {isExpanded && (
                       <div style={{ paddingTop:'10px', borderTop:'1px solid var(--border-color)', display:'flex', flexDirection:'column', gap:'8px' }}>
-                        <span style={{ fontSize:'0.7rem', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase' }}>Medallas de {member.name.split(' ')[0]} ({memberBadges.length}):</span>
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                          <span style={{ fontSize:'0.7rem', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase' }}>Medallas de {member.name.split(' ')[0]} ({memberBadges.length}):</span>
+                          <button onClick={(e)=>{ e.stopPropagation(); setExpandedMember(null); }} className="btn-secondary" style={{ fontSize:'0.7rem', padding:'4px 10px' }}>✕ Cerrar</button>
+                        </div>
                         {memberBadges.length===0 ? <span style={{ fontSize:'0.78rem', color:'var(--text-dim)' }}>Aún sin medallas — ¡a entrenar!</span> : (
                           <div style={{ display:'flex', flexWrap:'wrap', gap:'6px' }}>
                             {memberBadges.map(b=>(

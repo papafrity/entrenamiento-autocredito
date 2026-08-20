@@ -12,6 +12,7 @@ export default function PlanCalculator() {
   const [sortBy, setSortBy] = useState('default'); // 'default', 'price_desc', 'price_asc', 'quote_desc', 'quote_asc'
   const [isVisualCardOpen, setIsVisualCardOpen] = useState(false);
   const [isCardExpanded, setIsCardExpanded] = useState(true);
+  const [mobileExpanded, setMobileExpanded] = useState(null);
 
   // Estado para modo personalizado libre
   const [customCapital, setCustomCapital] = useState(43900000);
@@ -267,7 +268,8 @@ export default function PlanCalculator() {
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+          <style>{`@media(max-width:768px){ .pc-desktop-detail{display:none !important} .pc-grid{grid-template-columns:1fr !important} } @media(min-width:769px){ .pc-mobile-detail{display:none !important} }`}</style>
+          <div className="pc-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
             
             {/* Left: Plan Selector List */}
             <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '560px', overflowY: 'auto' }}>
@@ -284,10 +286,11 @@ export default function PlanCalculator() {
 
               {sortedPlans.map(plan => {
                 const isSelected = plan.code === selectedPlan.code;
+                const isMobileOpen = mobileExpanded === plan.code;
                 return (
+                  <React.Fragment key={plan.code}>
                   <div
-                    key={plan.code}
-                    onClick={() => { setSelectedPlanCode(plan.code); setIsCardExpanded(true); }}
+                    onClick={() => { setSelectedPlanCode(plan.code); setIsCardExpanded(true); if (typeof window !== 'undefined' && window.innerWidth <= 768) setMobileExpanded(prev => prev === plan.code ? null : plan.code); }}
                     style={{
                       padding: '10px 12px',
                       borderRadius: 'var(--radius-sm)',
@@ -320,20 +323,46 @@ export default function PlanCalculator() {
                         Cód: <strong>{plan.code}</strong> • {plan.brand || plan.category}
                       </p>
                     </div>
-
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-main)' }}>
                         {formatMoney(plan.quote1to7)}
                       </span>
                       <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>Cuota 1 a 7</p>
                     </div>
+                    <span className="pc-mobile-detail" style={{ color: 'var(--primary)', transform: isMobileOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg></span>
                   </div>
+                  {isMobileOpen && (
+                    <div className="pc-mobile-detail glass-card" style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px', border: '1px solid var(--primary)', background: 'rgba(255,159,28,0.06)', marginBottom: '4px' }}>
+                      {plan.image && <img src={plan.image} alt={plan.name} style={{ maxHeight: '160px', maxWidth: '100%', objectFit: 'contain', borderRadius: '8px', alignSelf: 'center' }} onError={e=>{e.target.style.display='none'}} />}
+                      <span className="badge badge-medium" style={{ fontSize: '0.62rem', alignSelf: 'flex-start' }}>Plan 300 • Cód. {plan.code}</span>
+                      <strong style={{ fontSize: '1rem', fontWeight: 800 }}>{plan.name}</strong>
+                      <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{plan.category} ({plan.brand}) • Valor: {formatMoney(plan.nominalValue)}</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px', borderRadius: '8px', borderLeft: '3px solid var(--primary)', minWidth: 0 }}>
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Cuotas 1 a 7:</span>
+                          <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--primary)', overflowWrap: 'anywhere' }}>{formatMoney(plan.quote1to7)}</div>
+                        </div>
+                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px', borderRadius: '8px', borderLeft: '3px solid var(--accent-green)', minWidth: 0 }}>
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Cuota 8+:</span>
+                          <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-green)', overflowWrap: 'anywhere' }}>{formatMoney(plan.quote8onwards)}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px', fontSize: '0.72rem' }}>
+                        <div><span style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.6rem' }}>Suscripción</span><br/><strong style={{ overflowWrap: 'anywhere' }}>{formatMoney(plan.subscription)}</strong></div>
+                        <div><span style={{ color: 'var(--text-muted)', fontSize: '0.6rem' }}>DI Total</span><br/><strong style={{ overflowWrap: 'anywhere' }}>{formatMoney(plan.diTotal)}</strong></div>
+                        <div><span style={{ color: 'var(--text-muted)', fontSize: '0.6rem' }}>DI 2 cuotas</span><br/><strong style={{ overflowWrap: 'anywhere' }}>{formatMoney(plan.di2Quotes)}</strong></div>
+                      </div>
+                      <button onClick={() => { setSelectedPlanCode(plan.code); setIsVisualCardOpen(true); }} className="btn-primary" style={{ padding: '10px', fontSize: '0.8rem', gap: '6px' }}><Image size={14}/> Generar Placa</button>
+                      <button onClick={() => handleShareOfficialQuote(plan)} className="btn-primary" style={{ padding: '10px', fontSize: '0.8rem', gap: '6px', background: '#25D366', color: '#fff' }}><Send size={14}/> WhatsApp</button>
+                    </div>
+                  )}
+                  </React.Fragment>
                 );
               })}
             </div>
 
-            {/* Right: Detailed Plan Card — collapsible */}
-            <div className="glass-card" style={{
+            {/* Right: Detailed Plan Card — collapsible (desktop only) */}
+            <div className="pc-desktop-detail glass-card" style={{
               padding: isCardExpanded ? '24px' : '14px 24px',
               border: '2px solid var(--primary)',
               background: 'linear-gradient(180deg, rgba(255, 159, 28, 0.12) 0%, rgba(18, 25, 41, 0.95) 100%)',

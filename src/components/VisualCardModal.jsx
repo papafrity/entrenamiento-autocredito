@@ -128,7 +128,15 @@ export default function VisualCardModal({ isOpen, onClose, plan }) {
         cardY += imgH + 16;
       }
 
-      const cardHeight = productImg ? 500 : 560;
+      // Calcular alturas de forma dinámica para evitar solape con imagen larga
+      // Estimar divY y cuotasY sin dibujar aún para sacar altura real
+      ctx.font = '900 48px "Outfit", sans-serif';
+      const tmpNameLines = wrapText(ctx, plan.name, width - 220);
+      const tmpDisplayLines = tmpNameLines.slice(0, 2);
+      const tmpDivY = cardY + (tmpDisplayLines.length > 1 ? 175 : 145);
+      const tmpCuotasY = tmpDivY + 125;
+      const cardContentBottom = tmpCuotasY + 165 + 20; // cuotas + padding interno
+      const cardHeight = cardContentBottom - cardY;
       ctx.fillStyle = 'rgba(18, 25, 41, 0.9)';
       ctx.strokeStyle = primary + '99';
       ctx.lineWidth = 3;
@@ -212,8 +220,8 @@ export default function VisualCardModal({ isOpen, onClose, plan }) {
       ctx.font = '500 16px "Plus Jakarta Sans", sans-serif';
       ctx.fillText('por mes', 770, cuotasY + 130);
 
-      // Beneficio centrado
-      const benY = cuotasY + 195;
+      // Beneficio centrado — separado de la card para no solapar
+      const benY = cardY + cardHeight + 28;
       const benGrad = ctx.createLinearGradient(70, benY, width - 70, benY);
       benGrad.addColorStop(0, 'rgba(255, 159, 28, 0.2)');
       benGrad.addColorStop(1, 'rgba(247, 127, 0, 0.25)');

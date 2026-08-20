@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { awardPointsToCurrentUser } from '../services/storageService';
-import { Zap, Clock, CheckCircle2, XCircle, Trophy, RotateCcw, Play, Award, Sparkles, ShieldCheck } from 'lucide-react';
+import { Zap, Clock, CheckCircle2, XCircle, Trophy, RotateCcw, Play, Award, Sparkles, ShieldCheck, Mic, MicOff } from 'lucide-react';
 
 const FLASH_QUESTIONS = [
   {
@@ -58,6 +58,9 @@ export default function QuickObjectionsGame() {
   const [isAnswered, setIsAnswered] = useState(false);
   const [score, setScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
+  const [isMicOn, setIsMicOn] = useState(false);
+  const [micMsg, setMicMsg] = useState('');
+  const recognitionRef = useRef(null);
 
   useEffect(() => {
     if (!hasStarted || isGameOver || isAnswered) return;
@@ -110,6 +113,38 @@ export default function QuickObjectionsGame() {
       const finalScore = score + (selectedOption !== null && FLASH_QUESTIONS[currentIndex].options[selectedOption]?.isCorrect ? 20 : 0);
       awardPointsToCurrentUser(finalScore, finalScore >= 80 ? 'flash_master' : null);
     }
+  };
+
+  // Mic para responder por voz: "uno", "dos", "tres" / "opción 1/2/3"
+  useEffect(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    const rec = new SR();
+    rec.lang = 'es-AR';
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.onresult = (e) => {
+      const t = e.results[0][0].transcript.toLowerCase().trim();
+      setMicMsg(`Escuchado: "${t}"`);
+      let idx = -1;
+      if (t.includes('uno') || t.includes('opción 1') || t.includes('opcion 1') || t.includes('primera') || t.includes('1')) idx = 0;
+      else if (t.includes('dos') || t.includes('opción 2') || t.includes('opcion 2') || t.includes('segunda') || t.includes('2')) idx = 1;
+      else if (t.includes('tres') || t.includes('opción 3') || t.includes('opcion 3') || t.includes('tercera') || t.includes('3')) idx = 2;
+      if (idx >= 0 && !isAnswered) {
+        const opt = currentQ.options[idx];
+        if (opt) handleSelectOption(idx, opt.isCorrect);
+      }
+      setTimeout(()=>setMicMsg(''), 2500);
+    };
+    rec.onend = () => setIsMicOn(false);
+    rec.onerror = () => setIsMicOn(false);
+    recognitionRef.current = rec;
+  }, [currentIndex, isAnswered]);
+
+  const toggleMic = () => {
+    if (!recognitionRef.current) { setMicMsg('Voz no soportada en este navegador'); setTimeout(()=>setMicMsg(''),2000); return; }
+    if (isMicOn) { try{ recognitionRef.current.stop(); }catch{} setIsMicOn(false); }
+    else { setMicMsg('Escuchando... decí "uno", "dos" o "tres"'); setIsMicOn(true); try{ recognitionRef.current.start(); }catch{} }
   };
 
   const currentQ = FLASH_QUESTIONS[currentIndex];
@@ -200,23 +235,29 @@ export default function QuickObjectionsGame() {
       {hasStarted && !isGameOver && (
         <div className="glass-panel" style={{ padding: '24px' }}>
           
-          {/* Progress & Timer */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          {/* Progress & Timer + Mic */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
             <span className="badge badge-medium" style={{ fontSize: '0.75rem' }}>
               Pregunta {currentIndex + 1} de {FLASH_QUESTIONS.length}
             </span>
-
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              color: timeLeft <= 10 ? 'var(--accent-red)' : 'var(--primary)',
-              fontWeight: 800,
-              fontSize: '1.1rem'
-            }}>
-              <Clock size={18} /> {timeLeft}s
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button onClick={toggleMic} disabled={isAnswered} className={isMicOn ? 'btn-mic btn-mic-recording' : 'btn-mic btn-mic-idle'} style={{ width: '36px', height: '36px' }} title="Responder por voz: decí uno/dos/tres">
+                {isMicOn ? <Mic size={16}/> : <MicOff size={14}/>}
+              </button>
+              {micMsg && <span style={{ fontSize: '0.72rem', color: 'var(--accent-green)', fontWeight: 600 }}>{micMsg}</span>}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: timeLeft <= 10 ? 'var(--accent-red)' : 'var(--primary)',
+                fontWeight: 800,
+                fontSize: '1.1rem'
+              }}>
+                <Clock size={18} /> {timeLeft}s
+              </div>
             </div>
           </div>
+          <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginBottom: '8px' }}>💡 Tip: podés decir <strong>"uno"</strong>, <strong>"dos"</strong> o <strong>"tres"</strong> por micrófono</p>
 
           {/* Objection Question */}
           <div style={{

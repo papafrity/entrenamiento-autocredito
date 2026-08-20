@@ -118,12 +118,21 @@ export default function SupervisorDashboard() {
   const totalSimulations = team.reduce((acc, a) => acc + (a.simulationsCompleted || 0), 0);
   const totalRealSales = team.reduce((acc, a) => acc + (a.salesClosed || 0), 0);
 
-  // Cálculo del avance del objetivo mensual
+  // Cálculo de campaña 21-20 (21 del mes anterior al 20 del actual)
   const goalProgress = Math.min(100, Math.round((totalRealSales / monthlySalesGoal) * 100));
   const now = new Date();
-  const currentDay = now.getDate();
-  const totalDaysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const monthProgress = Math.round((currentDay / totalDaysInMonth) * 100);
+  const getCampaignProgress = () => {
+    const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+    const start = new Date(y, m, 21);
+    if (d < 21) start.setMonth(m - 1);
+    const end = new Date(start.getFullYear(), start.getMonth() + 1, 20);
+    const totalMs = end - start;
+    const elapsedMs = now - start;
+    const totalDays = Math.round(totalMs / 86400000);
+    const elapsedDays = Math.max(0, Math.min(totalDays, Math.floor(elapsedMs / 86400000) + 1));
+    return { start, end, totalDays, elapsedDays, monthProgress: Math.round((elapsedDays / totalDays)*100), currentDay: elapsedDays, totalDaysInMonth: totalDays };
+  };
+  const { start: campStart, end: campEnd, monthProgress, currentDay, totalDaysInMonth } = getCampaignProgress();
 
   // Pantalla de Bloqueo por PIN
   if (!isUnlocked) {
@@ -227,7 +236,7 @@ export default function SupervisorDashboard() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             onClick={handleSync}
             disabled={isSyncing}
@@ -244,6 +253,13 @@ export default function SupervisorDashboard() {
             style={{ fontSize: '0.8rem', padding: '8px 14px', gap: '6px' }}
           >
             <Download size={15} /> Exportar Reporte Excel
+          </button>
+          <button
+            onClick={() => setIsUnlocked(false)}
+            className="btn-secondary"
+            style={{ fontSize: '0.8rem', padding: '8px 12px', gap: '6px', borderColor: 'rgba(230,57,70,0.4)', color: 'var(--accent-red)' }}
+          >
+            <Lock size={14} /> Cerrar sesión
           </button>
         </div>
       </div>
@@ -343,11 +359,11 @@ export default function SupervisorDashboard() {
             }} />
           </div>
 
-          {/* Rhythm / Pacing Indicator */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--text-dim)', marginTop: '2px' }}>
-            <span>📅 Día {currentDay} de {totalDaysInMonth} del mes ({monthProgress}% transcurrido)</span>
+          {/* Rhythm / Pacing Indicator — campaña 21-20 */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--text-dim)', marginTop: '2px', flexWrap: 'wrap', gap: '6px' }}>
+            <span>📅 Campaña {campStart.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })} → {campEnd.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })} — Día {currentDay} de {totalDaysInMonth} ({monthProgress}% transcurrido)</span>
             <span style={{ color: goalProgress >= monthProgress ? 'var(--accent-green)' : 'var(--accent-red)', fontWeight: 600 }}>
-              {goalProgress >= monthProgress ? '⚡ Ritmo de ventas por encima de lo esperado' : '⚠️ Se requiere acelerar el ritmo de cierre'}
+              {goalProgress >= monthProgress ? '⚡ Ritmo por encima de lo esperado' : '⚠️ Se requiere acelerar el ritmo'}
             </span>
           </div>
         </div>
