@@ -352,6 +352,16 @@ export default function PlanCalculator() {
                         <div><span style={{ color: 'var(--text-muted)', fontSize: '0.6rem' }}>DI Total</span><br/><strong style={{ overflowWrap: 'anywhere' }}>{formatMoney(plan.diTotal)}</strong></div>
                         <div><span style={{ color: 'var(--text-muted)', fontSize: '0.6rem' }}>DI 2 cuotas</span><br/><strong style={{ overflowWrap: 'anywhere' }}>{formatMoney(plan.di2Quotes)}</strong></div>
                       </div>
+                      {plan.specs && (plan.specs.seguridad?.length || plan.specs.confort?.length || plan.specs.tecnologia?.length) ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {plan.specs.seguridad?.length>0 && <div style={{ background: 'rgba(46,196,182,0.06)', border: '1px solid rgba(46,196,182,0.2)', padding: '8px', borderRadius: '6px' }}><strong style={{ fontSize: '0.65rem', color: 'var(--accent-green)' }}>🛡️ Seguridad</strong><ul style={{ paddingLeft: '14px', fontSize: '0.68rem', color: 'var(--text-muted)' }}>{plan.specs.seguridad.map((s,i)=><li key={i}>{s}</li>)}</ul></div>}
+                          {plan.specs.confort?.length>0 && <div style={{ background: 'rgba(0,180,216,0.06)', border: '1px solid rgba(0,180,216,0.2)', padding: '8px', borderRadius: '6px' }}><strong style={{ fontSize: '0.65rem', color: 'var(--secondary)' }}>🛋️ Confort</strong><ul style={{ paddingLeft: '14px', fontSize: '0.68rem', color: 'var(--text-muted)' }}>{plan.specs.confort.map((s,i)=><li key={i}>{s}</li>)}</ul></div>}
+                          {plan.specs.tecnologia?.length>0 && <div style={{ background: 'rgba(255,159,28,0.06)', border: '1px solid rgba(255,159,28,0.2)', padding: '8px', borderRadius: '6px' }}><strong style={{ fontSize: '0.65rem', color: 'var(--primary)' }}>📱 Tecnología</strong><ul style={{ paddingLeft: '14px', fontSize: '0.68rem', color: 'var(--text-muted)' }}>{plan.specs.tecnologia.map((s,i)=><li key={i}>{s}</li>)}</ul></div>}
+                        </div>
+                      ) : null}
+                      {plan.packIncludes?.length>0 && (
+                        <div style={{ background: 'rgba(155,93,229,0.06)', border: '1px solid rgba(155,93,229,0.2)', padding: '8px', borderRadius: '6px' }}><strong style={{ fontSize: '0.68rem', color: 'var(--accent-purple)' }}>📦 Incluye:</strong><ul style={{ paddingLeft: '14px', fontSize: '0.68rem', color: 'var(--text-muted)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 8px' }}>{plan.packIncludes.map((s,i)=><li key={i}>{s}</li>)}</ul></div>
+                      )}
                       <button onClick={() => { setSelectedPlanCode(plan.code); setIsVisualCardOpen(true); }} className="btn-primary" style={{ padding: '10px', fontSize: '0.8rem', gap: '6px' }}><Image size={14}/> Generar Placa</button>
                       <button onClick={() => handleShareOfficialQuote(plan)} className="btn-primary" style={{ padding: '10px', fontSize: '0.8rem', gap: '6px', background: '#25D366', color: '#fff' }}><Send size={14}/> WhatsApp</button>
                     </div>
@@ -465,6 +475,36 @@ export default function PlanCalculator() {
                   </strong>
                 </div>
               </div>
+
+              {/* Specs for autos */}
+              {selectedPlan.specs && (selectedPlan.specs.seguridad?.length || selectedPlan.specs.confort?.length || selectedPlan.specs.tecnologia?.length) ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
+                  {selectedPlan.specs.seguridad?.length>0 && (
+                    <div style={{ background: 'rgba(46,196,182,0.06)', border: '1px solid rgba(46,196,182,0.2)', padding: '10px', borderRadius: '8px' }}>
+                      <strong style={{ fontSize: '0.7rem', color: 'var(--accent-green)', display: 'block', marginBottom: '6px' }}>🛡️ Seguridad</strong>
+                      <ul style={{ paddingLeft: '14px', fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>{selectedPlan.specs.seguridad.map((s,i)=><li key={i}>{s}</li>)}</ul>
+                    </div>
+                  )}
+                  {selectedPlan.specs.confort?.length>0 && (
+                    <div style={{ background: 'rgba(0,180,216,0.06)', border: '1px solid rgba(0,180,216,0.2)', padding: '10px', borderRadius: '8px' }}>
+                      <strong style={{ fontSize: '0.7rem', color: 'var(--secondary)', display: 'block', marginBottom: '6px' }}>🛋️ Confort</strong>
+                      <ul style={{ paddingLeft: '14px', fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>{selectedPlan.specs.confort.map((s,i)=><li key={i}>{s}</li>)}</ul>
+                    </div>
+                  )}
+                  {selectedPlan.specs.tecnologia?.length>0 && (
+                    <div style={{ background: 'rgba(255,159,28,0.06)', border: '1px solid rgba(255,159,28,0.2)', padding: '10px', borderRadius: '8px' }}>
+                      <strong style={{ fontSize: '0.7rem', color: 'var(--primary)', display: 'block', marginBottom: '6px' }}>📱 Tecnología</strong>
+                      <ul style={{ paddingLeft: '14px', fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>{selectedPlan.specs.tecnologia.map((s,i)=><li key={i}>{s}</li>)}</ul>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+              {selectedPlan.packIncludes?.length>0 && (
+                <div style={{ background: 'rgba(155,93,229,0.06)', border: '1px solid rgba(155,93,229,0.2)', padding: '12px', borderRadius: '8px' }}>
+                  <strong style={{ fontSize: '0.75rem', color: 'var(--accent-purple)', display: 'block', marginBottom: '6px' }}>📦 INCLUYE:</strong>
+                  <ul style={{ paddingLeft: '16px', fontSize: '0.74rem', color: 'var(--text-muted)', lineHeight: 1.5, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '2px 12px' }}>{selectedPlan.packIncludes.map((s,i)=><li key={i}>{s}</li>)}</ul>
+                </div>
+              )}
 
               {/* Highlights */}
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.8rem' }}>
